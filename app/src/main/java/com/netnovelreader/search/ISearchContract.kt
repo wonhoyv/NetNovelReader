@@ -9,7 +9,7 @@ import com.netnovelreader.base.IViewModel
  */
 interface ISearchContract {
     interface ISearchView: IView<SearchViewModel> {
-        fun updateSearchResult(bookname: String?, shCode: ObservableInt)
+
     }
     interface ISearchViewModel: IViewModel<SearchBean> {
         fun addBookToShelf(bookname: String, url: String): String

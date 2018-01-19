@@ -13,30 +13,35 @@ import android.view.View;
  * Created by yangbo on 2018/1/19.
  */
 
-public class NewReaderView extends View {
-
+public class ReaderView extends View {
+    /**
+     * View显示的内容
+     */
     ObservableArrayList<String> text;
+    /**
+     * 第一次onDraw()时执行
+     */
+    private FirstDrawListener listener;
     private Paint paint = new Paint();
     Float txtFontSize = 50F;
     Float indacitorFontSize = 30F;
     private boolean isFirstDraw = true;
-    private FirstDrawListener listener;
 
-    public NewReaderView(Context context) {
+    public ReaderView(Context context) {
         super(context);
     }
 
-    public NewReaderView(Context context, @Nullable AttributeSet attrs) {
+    public ReaderView(Context context, @Nullable AttributeSet attrs) {
         super(context, attrs);
         init();
     }
 
-    public NewReaderView(Context context, @Nullable AttributeSet attrs, int defStyleAttr) {
+    public ReaderView(Context context, @Nullable AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
         init();
     }
 
-    public NewReaderView(Context context, @Nullable AttributeSet attrs, int defStyleAttr, int defStyleRes) {
+    public ReaderView(Context context, @Nullable AttributeSet attrs, int defStyleAttr, int defStyleRes) {
         super(context, attrs, defStyleAttr, defStyleRes);
         init();
     }
@@ -52,7 +57,7 @@ public class NewReaderView extends View {
         if(isFirstDraw){
             isFirstDraw = false;
             if(listener != null){
-                listener.doDrawPrepare();
+                listener.doDrawPrepare(getWidth(), getHeight(), txtFontSize);
             }
             listener = null;
         }
@@ -76,13 +81,11 @@ public class NewReaderView extends View {
     }
 
     public void setFirstDrawListener(FirstDrawListener listener){
-        if(isFirstDraw = true){
-            this.listener = listener;
-        }
+        this.listener = listener;
     }
 
     interface FirstDrawListener{
-        void doDrawPrepare();
+        void doDrawPrepare(int width, int height, float txtFontSize);
     }
 
 }

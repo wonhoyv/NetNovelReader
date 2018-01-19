@@ -47,8 +47,8 @@ class SearchActivity : AppCompatActivity(), ISearchContract.ISearchView {
             override fun onQueryTextSubmit(query: String): Boolean {
                 if(tmp == query && System.currentTimeMillis() - tmpTime < 1000) return true  //点击间隔小于1秒，并且搜索书名相同不再搜索
                 if (query.length > 0 && mViewModel != null) {
-//                    updateSearchResult(query, searchCode++)
-                    mViewModel?.searchBook("电视剧世界" )
+                    mViewModel?.searchBook(query)
+//                    mViewModel?.searchBook("电视剧世界" )
                     tmp = query
                     tmpTime = System.currentTimeMillis()
                 }
@@ -70,9 +70,6 @@ class SearchActivity : AppCompatActivity(), ISearchContract.ISearchView {
     override fun onDestroy() {
         super.onDestroy()
         mViewModel?.resultList?.removeOnListChangedCallback(arrayListChangeListener)
-    }
-
-    override fun updateSearchResult(bookname: String?, shCode: ObservableInt) {
     }
 
     inner class SearchClickEvent : IClickEvent {

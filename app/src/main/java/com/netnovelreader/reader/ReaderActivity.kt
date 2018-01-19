@@ -22,8 +22,7 @@ class ReaderActivity : AppCompatActivity(),IReaderContract.IReaderView {
 
     override fun initView() {
         readerView.background = getDrawable(R.drawable.bg_readbook_yellow)
-        var listener = ViewGestureListener(mViewModel!!, readerView)
-        listener.bookName = intent.getStringExtra("bookname")
+        var listener = ReaderViewListener(mViewModel!!)
         readerView.setFirstDrawListener(listener)
         detector = GestureDetector(this, listener)
     }

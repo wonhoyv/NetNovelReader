@@ -10,6 +10,8 @@ interface IReaderContract {
     interface IReaderView: IView<ReaderViewModel>{
     }
     interface IReaderViewModel: IViewModel<ReaderBean> {
-        fun getChapterText(chapterNum: Int, dirName: String): String
+        fun getRecord(): IntArray
+        fun getChapterCount(): Int
+        fun getChapterTxt(pageIndicator: IntArray, isNext: Int, width: Int, height: Int, txtFontSize: Float)
     }
 }

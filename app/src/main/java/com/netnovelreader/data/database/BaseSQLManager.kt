@@ -53,10 +53,6 @@ open class BaseSQLManager {
         val READRECORD = "readRecord"
         //编码
         val CHARSET = "charset"
-        //书对应的表名
-        val BOOKTABLE = "booktable"
-        //章节存放文件夹
-        val BOOKDIR = "bookdir"
         //来源网址
         val DOWNLOADURL = "downloadurl"
 
