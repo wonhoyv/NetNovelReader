@@ -1,9 +1,7 @@
 package com.netnovelreader.data.database
 
-import android.database.Cursor
 import android.database.sqlite.SQLiteDatabase
-import com.netnovelreader.reader.ReaderBean
-import com.netnovelreader.utils.getSavePath
+import com.netnovelreader.common.getSavePath
 import java.io.File
 
 /**
@@ -34,7 +32,7 @@ open class BaseSQLManager {
     companion object {
         val ID = "_id"
 
-        val TABLE_SHELF = "shelf"
+        val TABLE_PARSERULES = "parserules"
         //如qidian.com
         val HOSTNAME = "hostname"
         //目录网址解析规则
@@ -44,7 +42,7 @@ open class BaseSQLManager {
         //目录网址封面解析规则
         val COVER_RULE = "cover_rule"
 
-        val TABLE_PARSERULES = "parserules"
+        val TABLE_SHELF = "shelf"
         //书名
         val BOOKNAME = "tablename"
         //最新章节

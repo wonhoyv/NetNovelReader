@@ -5,9 +5,13 @@ import android.app.Service
 import android.content.Intent
 import android.os.IBinder
 import android.support.v4.app.NotificationCompat
+import android.util.Log
 import com.netnovelreader.R
+import com.netnovelreader.common.DownloadTask
+import com.netnovelreader.common.id2TableName
 import io.reactivex.Observable
 import io.reactivex.android.schedulers.AndroidSchedulers
+import kotlinx.android.synthetic.main.item_search.view.*
 import java.util.*
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
@@ -49,7 +53,7 @@ class DownloadService : Service() {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         synchronized(this){
             if(queue != null || intent != null){
-                val t = DownloadTask(intent!!.getStringExtra("localpath"),intent.getStringExtra("catalogurl"))
+                val t = DownloadTask(intent!!.getStringExtra("tableName"), intent.getStringExtra("catalogurl"))
                 if(max == -1){
                     queue!!.offer(t)
                     max = 0 //从网上解析目录需要时间，max不会马上赋值，所有在这里改变
@@ -90,9 +94,9 @@ class DownloadService : Service() {
     }
 
     fun stopOrContinue(){
-        if(progress == max && max != 0){  //判断一个task是否执行完
+        if(progress == max){  //判断一个task是否执行完
             if(tmpQueue!!.size == 0){ //是否还有任务待执行
-                queue!!.offer(DownloadTask("",""))
+                queue!!.offer(DownloadTask("", ""))
                 stopSelf()
             }else {
                 queue!!.offer(tmpQueue!!.removeFirst())

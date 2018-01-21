@@ -1,6 +1,6 @@
 package com.netnovelreader.shelf
 
-import com.netnovelreader.base.BindingAdapter
+import com.netnovelreader.common.BindingAdapter
 import com.netnovelreader.base.IView
 import com.netnovelreader.base.IViewModel
 
@@ -9,11 +9,13 @@ import com.netnovelreader.base.IViewModel
  */
 interface IShelfContract {
     interface IShelfView: IView<ShelfViewModel>{
-        fun updateShelf(adapter: BindingAdapter<ShelfBean>?)
+        fun updateShelf()
         fun checkPermission(permission: String): Boolean
         fun requirePermission(permission: String, reqCode: Int)
     }
     interface IShelfViewModel: IViewModel<ShelfBean> {
-        fun updateBookList()
+        fun updateBooks(): Boolean
+        fun refreshBookList()
+        fun deleteBook(bookname: String)
     }
 }

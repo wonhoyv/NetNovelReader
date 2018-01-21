@@ -5,7 +5,7 @@ import android.databinding.ObservableField
 import com.netnovelreader.data.database.SearchSQLManager
 import com.netnovelreader.data.database.ShelfSQLManager
 import com.netnovelreader.data.network.SearchBook
-import com.netnovelreader.utils.id2Bookname
+import com.netnovelreader.common.id2TableName
 import java.net.URLEncoder
 
 /**
@@ -23,7 +23,7 @@ class SearchViewModel : ISearchContract.ISearchViewModel {
      * 添加书到数据库
      */
     override fun addBookToShelf(bookname: String, url: String): String{
-        return id2Bookname(ShelfSQLManager().addBookToShelf(bookname, url))
+        return id2TableName(ShelfSQLManager().addBookToShelf(bookname, url))
     }
 
     override fun searchBook(bookname: String?) {

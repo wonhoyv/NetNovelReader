@@ -1,12 +1,7 @@
-package com.netnovelreader.utils
+package com.netnovelreader.common
 
-import android.app.Activity
-import android.content.Context
-import android.content.pm.PackageManager
 import android.os.Environment
-import android.support.v4.app.ActivityCompat
 import java.io.File
-import java.util.jar.Manifest
 import java.util.regex.Pattern
 
 /**
@@ -35,7 +30,7 @@ fun url2Hostname(url: String) : String{
     return hostname ?: "error"
 }
 
-fun id2Bookname(id: Int): String{
+fun id2TableName(id: Int): String{
     return "BOOK" + id
 }
 

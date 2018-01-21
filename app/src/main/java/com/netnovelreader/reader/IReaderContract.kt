@@ -1,5 +1,6 @@
 package com.netnovelreader.reader
 
+import android.databinding.ObservableArrayList
 import com.netnovelreader.base.IView
 import com.netnovelreader.base.IViewModel
 
@@ -10,8 +11,10 @@ interface IReaderContract {
     interface IReaderView: IView<ReaderViewModel>{
     }
     interface IReaderViewModel: IViewModel<ReaderBean> {
-        fun getRecord(): IntArray
-        fun getChapterCount(): Int
-        fun getChapterTxt(pageIndicator: IntArray, isNext: Int, width: Int, height: Int, txtFontSize: Float)
+        fun initData(width: Int, height: Int, txtFontSize: Float)
+        fun pageNext(width: Int, height: Int, txtFontSize: Float)
+        fun pagePrevious(width: Int, height: Int, txtFontSize: Float)
+        fun pageByCatalog(chapterName: String, width: Int, height: Int, txtFontSize: Float)
+        fun updateCatalog(): ObservableArrayList<ReaderBean.Catalog>
     }
 }

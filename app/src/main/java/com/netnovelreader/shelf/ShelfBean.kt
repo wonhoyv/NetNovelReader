@@ -12,6 +12,6 @@ import java.util.Vector
  */
 data class ShelfBean(var bookid: ObservableInt,
                      var bookname: ObservableField<String>,
-                     var readRecord: ObservableField<String>,
+                     var latestChapter: ObservableField<String>,
                      var downloadURL: ObservableField<String>
 ) : BaseObservable()

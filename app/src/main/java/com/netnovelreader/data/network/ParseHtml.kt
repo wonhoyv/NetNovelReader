@@ -2,11 +2,12 @@ package com.netnovelreader.data.network
 
 import com.netnovelreader.data.database.BaseSQLManager
 import com.netnovelreader.data.database.ParseSQLManager
-import com.netnovelreader.utils.TIMEOUT
-import com.netnovelreader.utils.UA
-import com.netnovelreader.utils.getHeaders
-import com.netnovelreader.utils.url2Hostname
+import com.netnovelreader.common.TIMEOUT
+import com.netnovelreader.common.getHeaders
+import com.netnovelreader.common.url2Hostname
 import org.jsoup.Jsoup
+import org.jsoup.nodes.Element
+import java.io.IOException
 import java.net.SocketTimeoutException
 
 /**
@@ -16,25 +17,30 @@ class ParseHtml {
     /**
      * 解析章节
      */
-    @Throws(SocketTimeoutException::class)
+    @Throws(IOException::class)
     fun getChapter(url: String): String {
-        var selector = ParseSQLManager().getChapterRule(url2Hostname(url), BaseSQLManager.CHAPTER_RULE)
-        selector ?: return ""
-        val chapter = Jsoup.connect(url).headers(getHeaders(url))
-                .timeout(TIMEOUT).get().select(selector)
-        var txt = "    " + chapter.text().replace(" ", "\n\n  ")
+        var txt: String?
+        val selector = ParseSQLManager().getChapterRule(url2Hostname(url), BaseSQLManager.CHAPTER_RULE)
+        if(selector == null || selector.length < 2){
+            txt = getChapterWithSelector(url)
+        }else{
+            txt = Jsoup.connect(url).headers(getHeaders(url))
+                    .timeout(TIMEOUT).get().select(selector).text()
+
+        }
+        txt = "    " + txt!!.replace(" ", "\n\n  ")
         return txt
     }
 
     /**
      * 解析目录
      */
-    @Throws(SocketTimeoutException::class)
+    @Throws(IOException::class)
     fun getCatalog(url: String): LinkedHashMap<String, String> {
-        var selector = ParseSQLManager().getChapterRule(url2Hostname(url), BaseSQLManager.CATALOG_RULE)
-        var catalog = LinkedHashMap<String, String>()
+        val selector = ParseSQLManager().getChapterRule(url2Hostname(url), BaseSQLManager.CATALOG_RULE)
+        val catalog = LinkedHashMap<String, String>()
         selector ?: return catalog
-        var list = Jsoup.connect(url).headers(getHeaders(url))
+        val list = Jsoup.connect(url).headers(getHeaders(url))
                 .timeout(TIMEOUT).get().select(selector).select("a")
         list.forEach {
             if(!it.text().contains("分卷阅读")){
@@ -48,5 +54,20 @@ class ParseHtml {
             }
         }
         return catalog
+    }
+
+    @Throws(IOException::class)
+    fun getChapterWithSelector(url: String): String {
+        val elements = Jsoup.connect(url).get().allElements
+        val indexList = ArrayList<Element>()
+        if(elements.size > 1){
+            for(i in 1.. elements.size - 1){
+                if(elements[0].text().length > elements.get(i).text().length * 2){
+                    indexList.add(elements[i])
+                }
+            }
+        }
+        elements.removeAll(indexList)
+        return elements.last().text()
     }
 }

@@ -15,30 +15,35 @@ import android.view.MenuItem
 import android.view.View
 import android.widget.Toast
 import com.netnovelreader.R
-import com.netnovelreader.base.BindingAdapter
+import com.netnovelreader.common.BindingAdapter
 import com.netnovelreader.base.IClickEvent
+import com.netnovelreader.common.NovelItemDecoration
+import com.netnovelreader.common.id2TableName
 import com.netnovelreader.databinding.ActivityShelfBinding
 import com.netnovelreader.reader.ReaderActivity
 import com.netnovelreader.search.SearchActivity
+import com.netnovelreader.service.DownloadService
 
-import kotlinx.android.synthetic.main.activity_shelf.* //kotlin 导入layout，省掉findviewbyid
-import kotlinx.android.synthetic.main.item_shelf_recycler_view.view.*
+import kotlinx.android.synthetic.main.activity_shelf.*
+import kotlinx.android.synthetic.main.item_shelf.view.*
 
 class ShelfActivity : AppCompatActivity(), IShelfContract.IShelfView {
 
     var mViewModel: ShelfViewModel? = null
     var arrayListChangeListener = ArrayListChangeListener()
+    var hasPermission = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setViewModel(ShelfViewModel())
-        if(!checkPermission(android.Manifest.permission.WRITE_EXTERNAL_STORAGE)){
+        hasPermission = checkPermission(android.Manifest.permission.WRITE_EXTERNAL_STORAGE)
+        if(!hasPermission){
             requirePermission(android.Manifest.permission.WRITE_EXTERNAL_STORAGE,1)
         }
         if(!checkPermission(android.Manifest.permission.INTERNET)){
             requirePermission(android.Manifest.permission.INTERNET,2)
         }
-        initView()
+        init()
     }
 
     /**
@@ -49,34 +54,47 @@ class ShelfActivity : AppCompatActivity(), IShelfContract.IShelfView {
         DataBindingUtil.setContentView<ActivityShelfBinding>(this, R.layout.activity_shelf)
     }
 
-    override fun initView(){
+    override fun init(){
         setSupportActionBar({toolbar.setTitle(R.string.shelf_activity_title); toolbar}())
         shelfRecycler.layoutManager = LinearLayoutManager(this)
+        shelfRecycler.addItemDecoration(NovelItemDecoration(this))
         shelfRecycler.setItemAnimator(DefaultItemAnimator())
-        if(checkPermission(android.Manifest.permission.WRITE_EXTERNAL_STORAGE)){
-            shelfRecycler.adapter = BindingAdapter(mViewModel?.bookList,
-                    R.layout.item_shelf_recycler_view, ShelfClickEvent())
-        }else{
-            shelfRecycler.adapter = BindingAdapter<Any>(null,
-                    R.layout.item_shelf_recycler_view, ShelfClickEvent())
-        }
+        shelfRecycler.adapter = BindingAdapter(mViewModel?.bookList, R.layout.item_shelf,
+                ShelfClickEvent())
         mViewModel?.bookList?.addOnListChangedCallback(arrayListChangeListener)
+        shelf_layout.setColorSchemeResources(R.color.colorPrimary)
+        var time = System.currentTimeMillis()
+        shelf_layout.setOnRefreshListener {
+            if(System.currentTimeMillis() - time > 2000){
+//                mViewModel!!.updateBooks()
+                mViewModel!!.bookList.forEach {
+                    val intent = Intent(this, DownloadService::class.java)
+                    intent.putExtra("tableName", id2TableName(it.bookid.get()))
+                    intent.putExtra("catalogurl", it.downloadURL.get())
+                    startService(intent)
+                }
+            }
+            time = System.currentTimeMillis()
+            shelf_layout.isRefreshing = false
+        }
     }
 
     override fun onResume() {
         super.onResume()
-        updateShelf(null)
+        updateShelf()
     }
 
     override fun onDestroy() {
         super.onDestroy()
         mViewModel?.bookList?.removeOnListChangedCallback(arrayListChangeListener)
+        mViewModel = null
     }
 
     //刷新书架数据
-    override fun updateShelf(adapter: BindingAdapter<ShelfBean>?) {
-        adapter?.changeDataSet(mViewModel?.bookList)
-        mViewModel?.updateBookList()
+    override fun updateShelf() {
+        if(hasPermission){
+            mViewModel?.refreshBookList()
+        }
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
@@ -101,7 +119,8 @@ class ShelfActivity : AppCompatActivity(), IShelfContract.IShelfView {
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
         if(requestCode == 1){
             if(grantResults[0] == PackageManager.PERMISSION_GRANTED){
-                updateShelf(shelfRecycler.adapter as BindingAdapter<ShelfBean>)
+                hasPermission = true
+                updateShelf()
             }else{
                 Toast.makeText(this, R.string.permission_warnning, Toast.LENGTH_LONG).show()
             }
@@ -122,7 +141,7 @@ class ShelfActivity : AppCompatActivity(), IShelfContract.IShelfView {
     /**
      * recyclerView item点击事件
      */
-    class ShelfClickEvent : IClickEvent {
+    inner class ShelfClickEvent : IClickEvent {
         fun itemOnClick(v: View){
             val intent = Intent(v.context, ReaderActivity::class.java)
             intent.putExtra("bookname", v.nameView.text.toString())
@@ -131,6 +150,8 @@ class ShelfActivity : AppCompatActivity(), IShelfContract.IShelfView {
 
         fun itemOnLongClick(view: View): Boolean{
             Toast.makeText(view.context, "删除${view.nameView.text.toString()}", Toast.LENGTH_SHORT).show()
+            mViewModel?.deleteBook(view.nameView.text.toString())
+            mViewModel?.refreshBookList()
             return true
         }
     }

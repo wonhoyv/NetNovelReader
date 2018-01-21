@@ -1,4 +1,4 @@
-package com.netnovelreader.base
+package com.netnovelreader.common
 
 import android.databinding.DataBindingUtil
 import android.databinding.ObservableArrayList
@@ -8,6 +8,7 @@ import android.view.LayoutInflater
 import android.view.ViewGroup
 
 import com.netnovelreader.BR
+import com.netnovelreader.base.IClickEvent
 
 /**
  * Created by yangbo on 18-1-12.
@@ -28,11 +29,6 @@ class BindingAdapter<T>(var itemDetails: ObservableArrayList<T>?, val resId: Int
     override fun getItemCount(): Int {
         itemDetails ?: return 0
         return itemDetails!!.size
-    }
-
-    fun changeDataSet(itemDetails: ObservableArrayList<T>?){
-        this.itemDetails = itemDetails
-        notifyDataSetChanged()
     }
 
     class BindingViewHolder<T>(val binding: ViewDataBinding) : RecyclerView.ViewHolder(binding.root){

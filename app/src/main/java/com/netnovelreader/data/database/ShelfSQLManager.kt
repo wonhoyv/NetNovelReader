@@ -10,31 +10,37 @@ import java.net.URL
 class ShelfSQLManager : BaseSQLManager() {
     init {
         getDB().execSQL("create table if not exists $TABLE_SHELF ($ID integer primary key, " +
-                "$BOOKNAME varchar(128) unique, $READRECORD varchar(128), $DOWNLOADURL indicator);")
+                "$BOOKNAME varchar(128) unique, $READRECORD varchar(128), $DOWNLOADURL text, " +
+                "$LATESTCHAPTER varchar(128));")
     }
 
     fun queryBookList(): Cursor? = db?.rawQuery("select * from $TABLE_SHELF;", null)
 
     fun addBookToShelf(bookname: String, url: String): Int{
         var id = 0
-        val cursor = db!!.rawQuery("select $ID from $TABLE_SHELF where $BOOKNAME='$bookname';", null)
+        val cursor = getDB().rawQuery("select $ID from $TABLE_SHELF where $BOOKNAME='$bookname';", null)
         if(cursor.moveToFirst()){
             id = cursor.getInt(0)
         }else{
-            var contentValue = ContentValues()
+            val contentValue = ContentValues()
             contentValue.put(BOOKNAME, bookname)
             contentValue.put(DOWNLOADURL, url)
-            id = db!!.insert(TABLE_SHELF, null, contentValue).toInt()
+            id = getDB().insert(TABLE_SHELF, null, contentValue).toInt()
         }
         cursor.close()
         closeDB()
         return id
     }
 
+    fun removeBookFromShelf(bookname: String): Int {
+        var id = getDB().delete(TABLE_SHELF, "$BOOKNAME='$bookname'", null)
+        closeDB()
+        return id
+    }
+
     fun getRecord(bookname: String): Array<String>{
         val result = Array<String>(2){""}
-        val cursor = getDB().
-                rawQuery("select $ID,$READRECORD from $TABLE_SHELF where $BOOKNAME='$bookname';", null)
+        val cursor = getDB().rawQuery("select $ID,$READRECORD from $TABLE_SHELF where $BOOKNAME='$bookname';", null)
         if(cursor.moveToFirst()){
             result[0] = cursor.getString(0) ?: ""
             result[1] = cursor.getString(1) ?: ""
@@ -47,5 +53,16 @@ class ShelfSQLManager : BaseSQLManager() {
     fun setRecord(bookname: String, record: String){
         getDB().execSQL("update $TABLE_SHELF set $READRECORD='$record' where $BOOKNAME='$bookname';");
         closeDB()
+    }
+
+    fun getLatestChapter(bookname: String): String{
+        var latestChapter: String? = null
+        val cursor = getDB().rawQuery("select $LATESTCHAPTER from $TABLE_SHELF where $BOOKNAME='$bookname';", null)
+        if(cursor.moveToFirst()){
+            latestChapter = cursor.getString(0)
+        }
+        cursor.close()
+        closeDB()
+        return latestChapter ?: ""
     }
 }

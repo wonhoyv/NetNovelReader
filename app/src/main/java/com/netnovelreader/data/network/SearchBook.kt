@@ -1,10 +1,9 @@
 package com.netnovelreader.data.network
 
-import android.util.Log
-import com.netnovelreader.utils.TIMEOUT
-import com.netnovelreader.utils.UA
-import com.netnovelreader.utils.getHeaders
-import com.netnovelreader.utils.url2Hostname
+import com.netnovelreader.common.TIMEOUT
+import com.netnovelreader.common.UA
+import com.netnovelreader.common.getHeaders
+import com.netnovelreader.common.url2Hostname
 import org.jsoup.Jsoup
 import java.net.ConnectException
 import java.net.HttpURLConnection

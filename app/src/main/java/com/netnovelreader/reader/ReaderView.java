@@ -57,10 +57,11 @@ public class ReaderView extends View {
         if(isFirstDraw){
             isFirstDraw = false;
             if(listener != null){
-                listener.doDrawPrepare(getWidth(), getHeight(), txtFontSize);
+                listener.doDrawPrepare();
             }
             listener = null;
         }
+        if(text.size() < 1) return;
         super.onDraw(canvas);
         paint.setTextSize(indacitorFontSize);
         canvas.drawText(text.get(0), getWidth() - indacitorFontSize * text.get(0).length(), getHeight() - indacitorFontSize, paint);
@@ -85,7 +86,7 @@ public class ReaderView extends View {
     }
 
     interface FirstDrawListener{
-        void doDrawPrepare(int width, int height, float txtFontSize);
+        void doDrawPrepare();
     }
 
 }

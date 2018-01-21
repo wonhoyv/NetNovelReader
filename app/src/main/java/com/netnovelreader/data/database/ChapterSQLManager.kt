@@ -14,6 +14,11 @@ class ChapterSQLManager : BaseSQLManager() {
         return this
     }
 
+    fun dropTable(tableName: String){
+        getDB().execSQL("drop table if exists $tableName;")
+        closeDB()
+    }
+
     @Synchronized
     fun isTableExists(tableName: String): Boolean{
         var result = false
@@ -32,10 +37,10 @@ class ChapterSQLManager : BaseSQLManager() {
     }
 
     @Synchronized
-    fun addAllChapter(map: LinkedHashMap<String, String>, tableName : String): Boolean{
+    fun addChapter(map: LinkedHashMap<String, String>, tableName : String): Boolean{
         try {
             getDB().beginTransaction()
-            var ite = map.iterator()
+            val ite = map.iterator()
             while (ite.hasNext()){
                 val entry = ite.next()
                 getDB().execSQL("insert into $tableName ($CHAPTERNAME, $CHAPTERURL, $ISDOWNLOADED) "
@@ -49,8 +54,8 @@ class ChapterSQLManager : BaseSQLManager() {
     }
 
     @Synchronized
-    fun setChapterFinish(tableName: String, chaptername: String, isDownloadSuccess: Boolean, url: String){
-        var cursor = getDB().rawQuery("select * from $tableName where $CHAPTERNAME='$chaptername';",null)
+    fun setChapterFinish(tableName: String, chaptername: String, url: String, isDownloadSuccess: Boolean){
+        val cursor = getDB().rawQuery("select * from $tableName where $CHAPTERNAME='$chaptername';",null)
         if(!cursor.moveToNext()){
             getDB().execSQL("insert into $tableName ($CHAPTERNAME, $CHAPTERURL, $ISDOWNLOADED) "
                     + "values ('$chaptername','$url','${compareValues(isDownloadSuccess, false)}')")
@@ -61,11 +66,25 @@ class ChapterSQLManager : BaseSQLManager() {
         cursor.close()
     }
 
+    /**
+     * @isDownloaded  0表示未下载,1表示已下载
+     */
     @Synchronized
-    fun getDownloaded(tableName: String): ArrayList<String>{
+    fun getDownloadedOrNot(tableName: String, isDownloaded: Int): LinkedHashMap<String,String>{
+        val map = LinkedHashMap<String,String>()
+        val cursor = getDB().rawQuery("select $CHAPTERNAME,$CHAPTERURL from $tableName where " +
+                "$ISDOWNLOADED='$isDownloaded';", null)
+        while (cursor.moveToNext()){
+            map.put(cursor.getString(0),cursor.getString(1))
+        }
+        cursor.close()
+        return map
+    }
+
+    @Synchronized
+    fun getAllChapter(tableName: String): ArrayList<String>{
         val arrayList = ArrayList<String>()
-        val cursor = getDB().rawQuery("select $CHAPTERNAME from $tableName where " +
-                "$ISDOWNLOADED='1';", null)
+        val cursor = getDB().rawQuery("select $CHAPTERNAME from $tableName;", null)
         while (cursor.moveToNext()){
             arrayList.add(cursor.getString(0))
         }
@@ -82,6 +101,17 @@ class ChapterSQLManager : BaseSQLManager() {
         cursor.close()
         closeDB()
         return chapterName ?: ""
+    }
+
+    fun getChapterId(tableName: String, chapterName: String): Int{
+        var id: Int = 1
+        val cursor = getDB().rawQuery("select $ID from $tableName where $CHAPTERNAME='$chapterName';", null)
+        if (cursor.moveToFirst()){
+            id = cursor.getInt(0)
+        }
+        cursor.close()
+        closeDB()
+        return id
     }
 
     fun getChapterCount(tableName: String): Int{

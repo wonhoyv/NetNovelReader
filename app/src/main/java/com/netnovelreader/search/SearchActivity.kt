@@ -3,25 +3,23 @@ package com.netnovelreader.search
 import android.content.Intent
 import android.databinding.DataBindingUtil
 import android.databinding.ObservableArrayList
-import android.databinding.ObservableInt
 import android.databinding.ObservableList
 import android.os.Bundle
 import android.support.v7.app.AppCompatActivity
 import android.support.v7.widget.DefaultItemAnimator
 import android.support.v7.widget.LinearLayoutManager
+import android.util.Log
 import android.view.View
 import android.widget.Toast
 import com.netnovelreader.R
-import com.netnovelreader.base.BindingAdapter
+import com.netnovelreader.common.BindingAdapter
 import com.netnovelreader.base.IClickEvent
+import com.netnovelreader.common.NovelItemDecoration
 import com.netnovelreader.databinding.ActivitySearchBinding
 import com.netnovelreader.service.DownloadService
-import io.reactivex.Observable
-import io.reactivex.android.schedulers.AndroidSchedulers
-import io.reactivex.schedulers.Schedulers
 
 import kotlinx.android.synthetic.main.activity_search.*
-import kotlinx.android.synthetic.main.item_search_recycler_view.view.*
+import kotlinx.android.synthetic.main.item_search.view.*
 
 class SearchActivity : AppCompatActivity(), ISearchContract.ISearchView {
     var mViewModel: SearchViewModel? = null
@@ -30,7 +28,7 @@ class SearchActivity : AppCompatActivity(), ISearchContract.ISearchView {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setViewModel(SearchViewModel())
-        initView()
+        init()
     }
 
     override fun setViewModel(vm: SearchViewModel) {
@@ -38,7 +36,7 @@ class SearchActivity : AppCompatActivity(), ISearchContract.ISearchView {
         DataBindingUtil.setContentView<ActivitySearchBinding>(this, R.layout.activity_search)
     }
 
-    override fun initView() {
+    override fun init() {
 
         //搜索事件监听
         search_bar.setOnQueryTextListener(object : android.widget.SearchView.OnQueryTextListener {
@@ -62,24 +60,27 @@ class SearchActivity : AppCompatActivity(), ISearchContract.ISearchView {
 
         searchRecycler.layoutManager = LinearLayoutManager(this)
         searchRecycler.adapter = BindingAdapter(mViewModel?.resultList,
-                R.layout.item_search_recycler_view, SearchClickEvent())
+                R.layout.item_search, SearchClickEvent())
         searchRecycler.setItemAnimator(DefaultItemAnimator())
+        searchRecycler.addItemDecoration(NovelItemDecoration(this))
         mViewModel?.resultList?.addOnListChangedCallback(arrayListChangeListener)
     }
 
     override fun onDestroy() {
         super.onDestroy()
         mViewModel?.resultList?.removeOnListChangedCallback(arrayListChangeListener)
+        mViewModel = null
     }
 
     inner class SearchClickEvent : IClickEvent {
         fun downloadBook(v: View) {
             if(v.resultName.text.toString().length > 0 &&  v.resultUrl.text.toString().length > 0){
-                val path = mViewModel!!.addBookToShelf(v.resultName.text.toString(), v.resultUrl.text.toString())
+                val tableName = mViewModel!!.addBookToShelf(v.resultName.text.toString(), v.resultUrl.text.toString())
                 Toast.makeText(this@SearchActivity, R.string.start_download, Toast.LENGTH_SHORT).show()
                 val intent = Intent(v.context, DownloadService::class.java)
-                intent.putExtra("localpath", path)
+                intent.putExtra("tableName", tableName)
                 intent.putExtra("catalogurl", v.resultUrl.text.toString())
+                Log.d("===========searchevent","$tableName  ${v.resultUrl.text.toString()}")
                 startService(intent)
             }
         }
