@@ -33,7 +33,13 @@ class ShelfSQLManager : BaseSQLManager() {
     }
 
     fun removeBookFromShelf(bookname: String): Int {
-        var id = getDB().delete(TABLE_SHELF, "$BOOKNAME='$bookname'", null)
+        val cursor = getDB().rawQuery("select $ID from $TABLE_SHELF where $BOOKNAME='$bookname';", null)
+        var id = 0
+        if(cursor.moveToFirst()){
+            id = cursor.getInt(0)
+        }
+        cursor.close()
+        getDB().execSQL("delete from $TABLE_SHELF where $ID=$id;")
         closeDB()
         return id
     }

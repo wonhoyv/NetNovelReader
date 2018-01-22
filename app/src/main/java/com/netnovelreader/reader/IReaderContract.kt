@@ -9,11 +9,12 @@ import com.netnovelreader.base.IViewModel
  */
 interface IReaderContract {
     interface IReaderView: IView<ReaderViewModel>{
+        fun showDialog()
     }
     interface IReaderViewModel: IViewModel<ReaderBean> {
         fun initData(width: Int, height: Int, txtFontSize: Float)
-        fun pageNext(width: Int, height: Int, txtFontSize: Float)
-        fun pagePrevious(width: Int, height: Int, txtFontSize: Float)
+        fun pageToNext(width: Int, height: Int, txtFontSize: Float)
+        fun pageToPrevious(width: Int, height: Int, txtFontSize: Float)
         fun pageByCatalog(chapterName: String, width: Int, height: Int, txtFontSize: Float)
         fun updateCatalog(): ObservableArrayList<ReaderBean.Catalog>
     }

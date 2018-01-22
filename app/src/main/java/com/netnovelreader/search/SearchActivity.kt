@@ -80,7 +80,6 @@ class SearchActivity : AppCompatActivity(), ISearchContract.ISearchView {
                 val intent = Intent(v.context, DownloadService::class.java)
                 intent.putExtra("tableName", tableName)
                 intent.putExtra("catalogurl", v.resultUrl.text.toString())
-                Log.d("===========searchevent","$tableName  ${v.resultUrl.text.toString()}")
                 startService(intent)
             }
         }

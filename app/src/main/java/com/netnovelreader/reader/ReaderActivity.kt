@@ -7,6 +7,7 @@ import android.os.Bundle
 import android.support.v7.widget.DefaultItemAnimator
 import android.support.v7.widget.LinearLayoutManager
 import android.support.v7.widget.RecyclerView
+import android.util.Log
 import android.view.GestureDetector
 import android.view.LayoutInflater
 import android.view.MotionEvent
@@ -20,14 +21,11 @@ import com.netnovelreader.databinding.ActivityReaderBinding
 import kotlinx.android.synthetic.main.activity_reader.*
 import kotlinx.android.synthetic.main.item_catalog.view.*
 
-class ReaderActivity : AppCompatActivity(),IReaderContract.IReaderView, GestureDetector.OnGestureListener,
-        ReaderView.FirstDrawListener, IClickEvent{
+class ReaderActivity : AppCompatActivity(), IReaderContract.IReaderView, GestureDetector.OnGestureListener,
+        ReaderView.FirstDrawListener, IClickEvent {
     var mViewModel: ReaderViewModel? = null
     var detector: GestureDetector? = null
     var dialog: AlertDialog? = null
-    var height = 0
-    var width = 0
-    var txtFontSize = 50f
     val MIN_MOVE = 80F
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -39,14 +37,20 @@ class ReaderActivity : AppCompatActivity(),IReaderContract.IReaderView, GestureD
     override fun init() {
         readerView.background = getDrawable(R.drawable.bg_readbook_yellow)
         readerView.setFirstDrawListener(this)
-        readerView.txtFontSize = txtFontSize
+        readerView.txtFontSize = 50f
         detector = GestureDetector(this, this)
+        catalogButton.setOnClickListener {
+            footView.visibility = View.INVISIBLE
+            showDialog()
+        }
+        fontSizeButton.setOnClickListener {
+
+        }
     }
 
     override fun onDestroy() {
         super.onDestroy()
         mViewModel = null
-
     }
 
     override fun setViewModel(vm: ReaderViewModel) {
@@ -59,42 +63,50 @@ class ReaderActivity : AppCompatActivity(),IReaderContract.IReaderView, GestureD
      * readerview第一次绘制时调用
      */
     override fun doDrawPrepare() {
-        width = readerView.width
-        height = readerView.height
-        mViewModel?.initData(width, height, txtFontSize)
+        mViewModel?.initData(readerView.width, readerView.height, readerView.txtFontSize)
     }
 
     override fun onFling(e1: MotionEvent, e2: MotionEvent, velocityX: Float, velocityY: Float): Boolean {
+        if (footView.visibility == View.VISIBLE) {
+            footView.visibility = View.INVISIBLE
+            return false
+        }
         val beginX = e1.x
         val endX = e2.x
-        if(Math.abs(beginX - endX) < MIN_MOVE) {
+        if (Math.abs(beginX - endX) < MIN_MOVE) {
             return false
-        }else{
+        } else {
             if (beginX > endX) {
-                mViewModel!!.pageNext(readerView.width, readerView.height, txtFontSize)
+                mViewModel!!.pageToNext(readerView.width, readerView.height, readerView.txtFontSize)
             } else {
-                mViewModel!!.pagePrevious(readerView.width, readerView.height, txtFontSize)
+                mViewModel!!.pageToPrevious(readerView.width, readerView.height, readerView.txtFontSize)
             }
         }
         return false
     }
 
     override fun onSingleTapUp(e: MotionEvent): Boolean {
+        if (footView.visibility == View.VISIBLE) {
+            footView.visibility = View.INVISIBLE
+            return false
+        }
         val x = e.x
         val y = e.y
-        if(y < height * 2 / 5 || y > height * 3 / 5){
-            if(x > width / 2){
-                mViewModel!!.pageNext(width, height, txtFontSize)
-            }else{
-                mViewModel!!.pagePrevious(width, height, txtFontSize)
+        if (y < readerView.height * 2 / 5 || y > readerView.height * 3 / 5) {
+            if (x > readerView.width / 2) {
+                mViewModel!!.pageToNext(readerView.width, readerView.height, readerView.txtFontSize)
+            } else {
+                mViewModel!!.pageToPrevious(readerView.width, readerView.height, readerView.txtFontSize)
             }
-        }else{
-            if(x > width * 3 / 5){
-                mViewModel!!.pageNext(width, height, txtFontSize)
-            }else if(x < width * 2 / 5){
-                mViewModel!!.pagePrevious(width, height, txtFontSize)
-            }else{
-                showDialog()
+        } else {
+            if (x > readerView.width * 3 / 5) {
+                mViewModel!!.pageToNext(readerView.width, readerView.height, readerView.txtFontSize)
+            } else if (x < readerView.width * 2 / 5) {
+                mViewModel!!.pageToPrevious(readerView.width, readerView.height, readerView.txtFontSize)
+            } else {
+                if (footView.visibility == View.INVISIBLE) {
+                    footView.visibility = View.VISIBLE
+                }
             }
         }
         return false
@@ -118,16 +130,17 @@ class ReaderActivity : AppCompatActivity(),IReaderContract.IReaderView, GestureD
     override fun onShowPress(e: MotionEvent?) {
     }
 
-    fun showDialog(){
+    override fun showDialog() {
         var catalogView: RecyclerView? = null
-        if(dialog == null){
+        if (dialog == null) {
             val builder = AlertDialog.Builder(this)
             val view = LayoutInflater.from(this).inflate(R.layout.fragment_catalog, null)
             catalogView = view.findViewById<RecyclerView>(R.id.catalogView)
             catalogView.layoutManager = LinearLayoutManager(this)
             catalogView.addItemDecoration(NovelItemDecoration(this))
             catalogView.setItemAnimator(DefaultItemAnimator())
-            catalogView.adapter = BindingAdapter(mViewModel?.catalog, R.layout.item_catalog, CatalogItemClickListener())
+            catalogView.adapter = BindingAdapter(mViewModel?.catalog, R.layout.item_catalog,
+                    CatalogItemClickListener())
             dialog = builder.setView(view).create()
         }
         mViewModel?.updateCatalog()
@@ -135,9 +148,10 @@ class ReaderActivity : AppCompatActivity(),IReaderContract.IReaderView, GestureD
         dialog?.show()
     }
 
-    inner class CatalogItemClickListener: IClickEvent {
-        fun onChapterClick(v: View){
-            mViewModel?.pageByCatalog(v.itemChapter.text.toString(), width, height, txtFontSize)
+    inner class CatalogItemClickListener : IClickEvent {
+        fun onChapterClick(v: View) {
+            mViewModel?.pageByCatalog(v.itemChapter.text.toString(), readerView.width, readerView.height,
+                    readerView.txtFontSize)
             dialog?.dismiss()
         }
     }

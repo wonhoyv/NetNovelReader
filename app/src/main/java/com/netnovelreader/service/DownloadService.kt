@@ -67,7 +67,6 @@ class DownloadService : Service() {
 
     override fun onDestroy() {
         super.onDestroy()
-        queue = null
         mNotificationManager?.cancel(NOTIFYID)
 //        executeDownload?.interrupt()
         threadPool?.shutdown()
