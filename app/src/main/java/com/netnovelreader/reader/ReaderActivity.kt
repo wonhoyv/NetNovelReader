@@ -7,7 +7,6 @@ import android.os.Bundle
 import android.support.v7.widget.DefaultItemAnimator
 import android.support.v7.widget.LinearLayoutManager
 import android.support.v7.widget.RecyclerView
-import android.util.Log
 import android.view.GestureDetector
 import android.view.LayoutInflater
 import android.view.MotionEvent
@@ -17,6 +16,7 @@ import com.netnovelreader.R
 import com.netnovelreader.base.IClickEvent
 import com.netnovelreader.common.BindingAdapter
 import com.netnovelreader.common.NovelItemDecoration
+import com.netnovelreader.data.database.SQLHelper
 import com.netnovelreader.databinding.ActivityReaderBinding
 import kotlinx.android.synthetic.main.activity_reader.*
 import kotlinx.android.synthetic.main.item_catalog.view.*
@@ -51,6 +51,7 @@ class ReaderActivity : AppCompatActivity(), IReaderContract.IReaderView, Gesture
     override fun onDestroy() {
         super.onDestroy()
         mViewModel = null
+        SQLHelper.closeDB()
     }
 
     override fun setViewModel(vm: ReaderViewModel) {

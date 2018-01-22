@@ -3,11 +3,10 @@ package com.netnovelreader.shelf
 import android.databinding.ObservableArrayList
 import android.databinding.ObservableField
 import android.databinding.ObservableInt
-import android.util.Log
 import com.netnovelreader.common.DownloadTask
 import com.netnovelreader.common.getSavePath
 import com.netnovelreader.common.id2TableName
-import com.netnovelreader.data.database.BaseSQLManager
+import com.netnovelreader.data.database.SQLHelper
 import com.netnovelreader.data.database.ChapterSQLManager
 import com.netnovelreader.data.database.ShelfSQLManager
 import java.io.File
@@ -46,14 +45,13 @@ class ShelfViewModel : IShelfContract.IShelfViewModel {
         bookList.clear()
         val cursor = dbManager.queryBookList()
         while (cursor != null && cursor.moveToNext()){
-            val bookBean = ShelfBean(ObservableInt(cursor.getInt(cursor.getColumnIndex(BaseSQLManager.ID))),
-                    ObservableField(cursor.getString(cursor.getColumnIndex(BaseSQLManager.BOOKNAME))),
-                    ObservableField(cursor.getString(cursor.getColumnIndex(BaseSQLManager.LATESTCHAPTER)) ?: ""),
-                    ObservableField(cursor.getString(cursor.getColumnIndex(BaseSQLManager.DOWNLOADURL))))
+            val bookBean = ShelfBean(ObservableInt(cursor.getInt(cursor.getColumnIndex(SQLHelper.ID))),
+                    ObservableField(cursor.getString(cursor.getColumnIndex(SQLHelper.BOOKNAME))),
+                    ObservableField(cursor.getString(cursor.getColumnIndex(SQLHelper.LATESTCHAPTER)) ?: ""),
+                    ObservableField(cursor.getString(cursor.getColumnIndex(SQLHelper.DOWNLOADURL))))
             bookList.add(bookBean)
         }
         cursor?.close()
-        dbManager.closeDB()
     }
 
     override fun deleteBook(bookname: String){

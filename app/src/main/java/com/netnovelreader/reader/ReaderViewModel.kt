@@ -4,7 +4,7 @@ import android.databinding.ObservableArrayList
 import com.netnovelreader.data.database.ChapterSQLManager
 import com.netnovelreader.data.database.ShelfSQLManager
 import com.netnovelreader.common.id2TableName
-import com.netnovelreader.data.database.BaseSQLManager
+import com.netnovelreader.data.database.SQLHelper
 import java.util.Vector
 
 /**
@@ -100,15 +100,14 @@ class ReaderViewModel(val bookName: String) : IReaderContract.IReaderViewModel {
      */
     override fun pageByCatalog(chapterName: String, width: Int, height: Int, txtFontSize: Float) {
         var tableName: String? = null
-        val sqlManager = ChapterSQLManager()
-        val cursor = sqlManager.getDB().rawQuery("select ${BaseSQLManager.ID} from " +
-                "${BaseSQLManager.TABLE_SHELF} where ${BaseSQLManager.BOOKNAME}='$bookName';",
+        val cursor = SQLHelper.getDB().rawQuery("select ${SQLHelper.ID} from " +
+                "${SQLHelper.TABLE_SHELF} where ${SQLHelper.BOOKNAME}='$bookName';",
                 null)
         if(cursor.moveToFirst()){
             tableName = id2TableName(cursor.getInt(0))
         }
         cursor.close()
-        pageIndicator[0] = sqlManager.getChapterId(tableName ?: "", chapterName)
+        pageIndicator[0] = ChapterSQLManager().getChapterId(tableName ?: "", chapterName)
         pageIndicator[1]  = 1
         getPage(pageIndicator, width, height, txtFontSize)
         updateTextAndRecord(pageIndicator)
@@ -119,19 +118,17 @@ class ReaderViewModel(val bookName: String) : IReaderContract.IReaderViewModel {
      */
     override fun updateCatalog(): ObservableArrayList<ReaderBean.Catalog> {
         catalog.clear()
-        val sqlManager = BaseSQLManager()
-        val cursor = sqlManager.getDB().rawQuery("select ${BaseSQLManager.ID} from " +
-                "${BaseSQLManager.TABLE_SHELF} where ${BaseSQLManager.BOOKNAME}='$bookName';",
+        val cursor = SQLHelper.getDB().rawQuery("select ${SQLHelper.ID} from " +
+                "${SQLHelper.TABLE_SHELF} where ${SQLHelper.BOOKNAME}='$bookName';",
                 null)
         if(!cursor.moveToFirst()) return catalog
-        val catalogCursor = sqlManager.getDB().rawQuery("select ${BaseSQLManager.CHAPTERNAME} " +
+        val catalogCursor = SQLHelper.getDB().rawQuery("select ${SQLHelper.CHAPTERNAME} " +
                 "from ${id2TableName(cursor.getInt(0))}", null)
         while (catalogCursor.moveToNext()){
             catalog.add(ReaderBean.Catalog(catalogCursor.getString(0)))
         }
         cursor.close()
         catalogCursor.close()
-        sqlManager.closeDB()
         return catalog
     }
 

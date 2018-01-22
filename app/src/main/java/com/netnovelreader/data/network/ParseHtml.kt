@@ -1,6 +1,6 @@
 package com.netnovelreader.data.network
 
-import com.netnovelreader.data.database.BaseSQLManager
+import com.netnovelreader.data.database.SQLHelper
 import com.netnovelreader.data.database.ParseSQLManager
 import com.netnovelreader.common.TIMEOUT
 import com.netnovelreader.common.getHeaders
@@ -8,7 +8,6 @@ import com.netnovelreader.common.url2Hostname
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Element
 import java.io.IOException
-import java.net.SocketTimeoutException
 
 /**
  * Created by yangbo on 18-1-14.
@@ -20,7 +19,7 @@ class ParseHtml {
     @Throws(IOException::class)
     fun getChapter(url: String): String {
         var txt: String?
-        val selector = ParseSQLManager().getChapterRule(url2Hostname(url), BaseSQLManager.CHAPTER_RULE)
+        val selector = ParseSQLManager().getChapterRule(url2Hostname(url), SQLHelper.CHAPTER_RULE)
         if(selector == null || selector.length < 2){
             txt = getChapterWithSelector(url)
         }else{
@@ -37,7 +36,7 @@ class ParseHtml {
      */
     @Throws(IOException::class)
     fun getCatalog(url: String): LinkedHashMap<String, String> {
-        val selector = ParseSQLManager().getChapterRule(url2Hostname(url), BaseSQLManager.CATALOG_RULE)
+        val selector = ParseSQLManager().getChapterRule(url2Hostname(url), SQLHelper.CATALOG_RULE)
         val catalog = LinkedHashMap<String, String>()
         selector ?: return catalog
         val list = Jsoup.connect(url).headers(getHeaders(url))

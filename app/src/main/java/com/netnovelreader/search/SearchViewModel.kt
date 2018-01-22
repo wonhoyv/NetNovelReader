@@ -6,6 +6,7 @@ import com.netnovelreader.data.database.SearchSQLManager
 import com.netnovelreader.data.database.ShelfSQLManager
 import com.netnovelreader.data.network.SearchBook
 import com.netnovelreader.common.id2TableName
+import com.netnovelreader.data.database.SQLHelper
 import java.net.URLEncoder
 
 /**
@@ -37,7 +38,7 @@ class SearchViewModel : ISearchContract.ISearchViewModel {
 
     override fun searchBookFromSite(bookname: String, siteinfo: Array<String?>, reqCode: Int) {
         var result: String? = null
-        val url = siteinfo[1]!!.replace(SearchSQLManager.SEARCH_NAME, URLEncoder.encode(bookname, siteinfo[7]))
+        val url = siteinfo[1]!!.replace(SQLHelper.SEARCH_NAME, URLEncoder.encode(bookname, siteinfo[7]))
         try{
             if (siteinfo[0].equals("0")) {
                 result = SearchBook().search(url, siteinfo[4] ?: "", siteinfo[6] ?: "")

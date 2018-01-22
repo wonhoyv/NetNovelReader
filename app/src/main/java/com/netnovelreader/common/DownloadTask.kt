@@ -1,13 +1,11 @@
 package com.netnovelreader.common
 
-import android.util.Log
-import com.netnovelreader.data.database.BaseSQLManager
+import com.netnovelreader.data.database.SQLHelper
 import com.netnovelreader.data.database.ChapterSQLManager
 import com.netnovelreader.data.network.ParseHtml
 import java.io.File
 import java.io.FileWriter
 import java.io.IOException
-import java.net.SocketTimeoutException
 import kotlin.collections.ArrayList
 
 /**
@@ -45,18 +43,18 @@ class DownloadTask(val tableName: String, val url: String) {
             }
         }
         if (entry != null) {
-            sqlManager.getDB().execSQL("update ${BaseSQLManager.TABLE_SHELF} set " +
-                    "${BaseSQLManager.LATESTCHAPTER}='${entry.key}' where " +
-                    "${BaseSQLManager.ID}=${tableName.replace("BOOK", "")}")
+            synchronized(SQLHelper) {
+                SQLHelper.getDB().execSQL("update ${SQLHelper.TABLE_SHELF} set " +
+                        "${SQLHelper.LATESTCHAPTER}='${entry.key}' where " +
+                        "${SQLHelper.ID}=${tableName.replace("BOOK", "")}")
+            }
         }
-        sqlManager.closeDB()
     }
 
     @Throws(IOException::class)
     fun getUnDownloadFromSql(saveDir: String, tableName: String): ArrayList<DownloadChapterRunnable> {
         val sqlManager = ChapterSQLManager()
         val map = sqlManager.getDownloadedOrNot(tableName, 0)
-        sqlManager.closeDB()
         val runnables = ArrayList<DownloadChapterRunnable>()
         val iterator = map.iterator()
         while (iterator.hasNext()) {
@@ -87,7 +85,6 @@ class DownloadTask(val tableName: String, val url: String) {
                 dbm.setChapterFinish(tablename, chapterName, chapterUrl, false)
             } finally {
                 fos?.close()
-                dbm.closeDB()
                 eON()
             }
         }
