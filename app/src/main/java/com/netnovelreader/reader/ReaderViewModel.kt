@@ -168,7 +168,7 @@ class ReaderViewModel(val bookName: String) : IReaderContract.IReaderViewModel {
     }
 
     /**
-     * 更改要显示的字符串 text
+     * 更改view要显示的字符串 text
      * 保存阅读记录
      */
     @Synchronized

@@ -11,4 +11,6 @@
     <string name="wait2download">还有n项待处理</string>
     <string name="catalogButton">打开目录</string>
     <string name="fontSizeButton">字体大小</string>
+    <string name="nightmodel">夜间模式</string>
+    <string name="open">打开</string>
 </resources>

@@ -8,8 +8,8 @@ import android.os.Bundle
 import android.support.v7.app.AppCompatActivity
 import android.support.v7.widget.DefaultItemAnimator
 import android.support.v7.widget.LinearLayoutManager
-import android.support.v7.widget.SearchView
 import android.view.View
+import android.widget.SearchView
 import android.widget.Toast
 import com.netnovelreader.R
 import com.netnovelreader.base.IClickEvent
