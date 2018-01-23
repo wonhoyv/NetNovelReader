@@ -11,17 +11,14 @@ import android.view.View
  * Created by yangbo on 18-1-20.
  */
 class NovelItemDecoration(val context: Context) : RecyclerView.ItemDecoration() {
-    val attrs = IntArray(1){ android.R.attr.listDivider }
+    val attrs = IntArray(1) { android.R.attr.listDivider }
     val diverHeight = 3
     val mDivider: Drawable
+
     init {
         val typedArray = context.obtainStyledAttributes(attrs)
         mDivider = typedArray.getDrawable(0)
         typedArray.recycle()
-    }
-
-    override fun onDrawOver(c: Canvas, parent: RecyclerView, state: RecyclerView.State) {
-        super.onDrawOver(c, parent, state)
     }
 
     override fun onDraw(c: Canvas, parent: RecyclerView, state: RecyclerView.State) {
@@ -29,7 +26,7 @@ class NovelItemDecoration(val context: Context) : RecyclerView.ItemDecoration() 
         val left = parent.left
         val right = parent.right
         val count = parent.childCount
-        for(i in 0..count - 1){
+        for (i in 0..count - 1) {
             val child = parent.getChildAt(i)
             val params = child.layoutParams as RecyclerView.LayoutParams
             val top = child.bottom + params.bottomMargin

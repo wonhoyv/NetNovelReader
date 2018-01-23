@@ -1,12 +1,10 @@
 package com.netnovelreader.common
 
-import com.netnovelreader.data.database.SQLHelper
-import com.netnovelreader.data.database.ChapterSQLManager
-import com.netnovelreader.data.network.ParseHtml
+import com.netnovelreader.data.ParseHtml
+import com.netnovelreader.data.SQLHelper
 import java.io.File
 import java.io.FileWriter
 import java.io.IOException
-import kotlin.collections.ArrayList
 
 /**
  * Created by yangbo on 2018/1/16.
@@ -15,31 +13,30 @@ class DownloadTask(val tableName: String, val url: String) {
     var chapterName: String? = null
 
     @Throws(IOException::class)
-    fun getRunnables(): ArrayList<DownloadChapterRunnable> {
+    fun getUnitList(): ArrayList<DownloadChapterUnit> {
         val dir = mkdirs(getSavePath() + "/$tableName")
-        var runnableDownloads: ArrayList<DownloadChapterRunnable>? = null
+        var unitList: ArrayList<DownloadChapterUnit>? = null
         //TODO chapterName != null
         if (chapterName == null) {
             updateSql()
-            runnableDownloads = getUnDownloadFromSql(dir, tableName)
+            unitList = getUnDownloadFromSql(dir, tableName)
         } else {
 
         }
-        return runnableDownloads ?: ArrayList()
+        return unitList ?: ArrayList()
     }
 
     @Throws(IOException::class)
     fun updateSql() {
         val map = ParseHtml().getCatalog(url)
-        val sqlManager = ChapterSQLManager()
-        sqlManager.createTable(tableName)
-        val chapterInSql = sqlManager.getAllChapter(tableName)
+        SQLHelper.createTable(tableName)
+        val chapterInSql = SQLHelper.getAllChapter(tableName)
         val iterator = map.iterator()
         var entry: MutableMap.MutableEntry<String, String>? = null
         while (iterator.hasNext()) {
             entry = iterator.next()
             if (!chapterInSql.contains(entry.key)) {
-                sqlManager.setChapterFinish(tableName, entry.key, entry.value, false)
+                SQLHelper.setChapterFinish(tableName, entry.key, entry.value, false)
             }
         }
         if (entry != null) {
@@ -52,46 +49,41 @@ class DownloadTask(val tableName: String, val url: String) {
     }
 
     @Throws(IOException::class)
-    fun getUnDownloadFromSql(saveDir: String, tableName: String): ArrayList<DownloadChapterRunnable> {
-        val sqlManager = ChapterSQLManager()
-        val map = sqlManager.getDownloadedOrNot(tableName, 0)
-        val runnables = ArrayList<DownloadChapterRunnable>()
+    fun getUnDownloadFromSql(saveDir: String, tableName: String): ArrayList<DownloadChapterUnit> {
+        val map = SQLHelper.getDownloadedOrNot(tableName, 0)
+        val runnables = ArrayList<DownloadChapterUnit>()
         val iterator = map.iterator()
         while (iterator.hasNext()) {
             val entry = iterator.next()
-            runnables.add(DownloadChapterRunnable(tableName, saveDir, entry.key, entry.value))
+            runnables.add(DownloadChapterUnit(tableName, saveDir, entry.key, entry.value))
         }
         return runnables
     }
 
 
-
     /**
-     * 下载保存章节具体执行者，实现runnable接口，线程池执行
+     * 下载保存章节具体执行者
      */
-    class DownloadChapterRunnable(val tablename: String, val dir: String, val chapterName: String,
-                                  val chapterUrl: String) : Runnable {
-        lateinit var eON: () -> Unit?
+    class DownloadChapterUnit(val tablename: String, val dir: String, val chapterName: String,
+                              val chapterUrl: String) {
+
         @Throws(IOException::class)
-        override fun run() {
+        fun download(chapterText: String): Int {
             var fos: FileWriter? = null
-            var dbm = ChapterSQLManager()
             try {
                 fos = FileWriter(File(dir, chapterName))
-                fos.write(ParseHtml().getChapter(chapterUrl))
+                fos.write(chapterText)
                 fos.flush()
-                dbm.setChapterFinish(tablename, chapterName, chapterUrl, true)
+                SQLHelper.setChapterFinish(tablename, chapterName, chapterUrl, true)
             } catch (e: Exception) {
-                dbm.setChapterFinish(tablename, chapterName, chapterUrl, false)
+                SQLHelper.setChapterFinish(tablename, chapterName, chapterUrl, false)
             } finally {
                 fos?.close()
-                eON()
+                return 1
             }
         }
 
-        fun setFun(eON: () -> Unit): Runnable {
-            this.eON = eON
-            return this
-        }
+        @Throws(IOException::class)
+        fun getChapterTxt(): String = ParseHtml().getChapter(chapterUrl)
     }
 }

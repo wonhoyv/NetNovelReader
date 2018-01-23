@@ -8,21 +8,20 @@ import android.os.Bundle
 import android.support.v7.app.AppCompatActivity
 import android.support.v7.widget.DefaultItemAnimator
 import android.support.v7.widget.LinearLayoutManager
-import android.util.Log
+import android.support.v7.widget.SearchView
 import android.view.View
 import android.widget.Toast
 import com.netnovelreader.R
-import com.netnovelreader.common.BindingAdapter
 import com.netnovelreader.base.IClickEvent
+import com.netnovelreader.common.BindingAdapter
 import com.netnovelreader.common.NovelItemDecoration
 import com.netnovelreader.databinding.ActivitySearchBinding
 import com.netnovelreader.service.DownloadService
-
 import kotlinx.android.synthetic.main.activity_search.*
 import kotlinx.android.synthetic.main.item_search.view.*
 
 class SearchActivity : AppCompatActivity(), ISearchContract.ISearchView {
-    var mViewModel: SearchViewModel? = null
+    var searchViewModel: SearchViewModel? = null
     var arrayListChangeListener = ArrayListChangeListener()
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -32,50 +31,50 @@ class SearchActivity : AppCompatActivity(), ISearchContract.ISearchView {
     }
 
     override fun setViewModel(vm: SearchViewModel) {
-        mViewModel = vm
+        searchViewModel = vm
         DataBindingUtil.setContentView<ActivitySearchBinding>(this, R.layout.activity_search)
     }
 
     override fun init() {
-
-        //搜索事件监听
-        search_bar.setOnQueryTextListener(object : android.widget.SearchView.OnQueryTextListener {
-            var tmp = ""
-            var tmpTime = System.currentTimeMillis()
-            override fun onQueryTextSubmit(query: String): Boolean {
-                if(tmp == query && System.currentTimeMillis() - tmpTime < 1000) return true  //点击间隔小于1秒，并且搜索书名相同不再搜索
-                if (query.length > 0 && mViewModel != null) {
-                    mViewModel?.searchBook(query)
-//                    mViewModel?.searchBook("电视剧世界" )
-                    tmp = query
-                    tmpTime = System.currentTimeMillis()
-                }
-                return true
-            }
-
-            override fun onQueryTextChange(newText: String?): Boolean {
-                return true
-            }
-        })
-
         searchRecycler.layoutManager = LinearLayoutManager(this)
-        searchRecycler.adapter = BindingAdapter(mViewModel?.resultList,
+        searchRecycler.adapter = BindingAdapter(searchViewModel?.resultList,
                 R.layout.item_search, SearchClickEvent())
         searchRecycler.setItemAnimator(DefaultItemAnimator())
         searchRecycler.addItemDecoration(NovelItemDecoration(this))
-        mViewModel?.resultList?.addOnListChangedCallback(arrayListChangeListener)
+        searchViewModel?.resultList?.addOnListChangedCallback(arrayListChangeListener)
+        //搜索事件监听
+        search_bar.setOnQueryTextListener(QueryListener())
     }
 
     override fun onDestroy() {
         super.onDestroy()
-        mViewModel?.resultList?.removeOnListChangedCallback(arrayListChangeListener)
-        mViewModel = null
+        searchViewModel?.resultList?.removeOnListChangedCallback(arrayListChangeListener)
+        searchViewModel = null
+    }
+
+    inner class QueryListener : SearchView.OnQueryTextListener{
+        var tmp = ""
+        var tmpTime = System.currentTimeMillis()
+
+        override fun onQueryTextSubmit(query: String): Boolean {
+            if (tmp == query && System.currentTimeMillis() - tmpTime < 1000) return true  //点击间隔小于1秒，并且搜索书名相同不再搜索
+            if (query.length > 0) {
+                searchViewModel?.searchBook(query)
+                tmp = query
+                tmpTime = System.currentTimeMillis()
+            }
+            return true
+        }
+
+        override fun onQueryTextChange(newText: String?): Boolean {
+            return true
+        }
     }
 
     inner class SearchClickEvent : IClickEvent {
         fun downloadBook(v: View) {
-            if(v.resultName.text.toString().length > 0 &&  v.resultUrl.text.toString().length > 0){
-                val tableName = mViewModel!!.addBookToShelf(v.resultName.text.toString(), v.resultUrl.text.toString())
+            if (v.resultName.text.toString().length > 0 && v.resultUrl.text.toString().length > 0) {
+                val tableName = searchViewModel!!.addBookToShelf(v.resultName.text.toString(), v.resultUrl.text.toString())
                 Toast.makeText(this@SearchActivity, R.string.start_download, Toast.LENGTH_SHORT).show()
                 val intent = Intent(v.context, DownloadService::class.java)
                 intent.putExtra("tableName", tableName)
@@ -85,7 +84,7 @@ class SearchActivity : AppCompatActivity(), ISearchContract.ISearchView {
         }
     }
 
-    inner class ArrayListChangeListener : ObservableList.OnListChangedCallback<ObservableArrayList<SearchBean>>(){
+    inner class ArrayListChangeListener : ObservableList.OnListChangedCallback<ObservableArrayList<SearchBean>>() {
         override fun onChanged(p0: ObservableArrayList<SearchBean>?) {
             notifyDataSetChanged()
         }
@@ -106,7 +105,7 @@ class SearchActivity : AppCompatActivity(), ISearchContract.ISearchView {
             notifyDataSetChanged()
         }
 
-        fun notifyDataSetChanged(){
+        fun notifyDataSetChanged() {
             runOnUiThread { searchRecycler.adapter.notifyDataSetChanged() }
         }
     }

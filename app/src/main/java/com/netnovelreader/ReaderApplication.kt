@@ -2,7 +2,6 @@ package com.netnovelreader
 
 import android.app.Application
 import android.content.Context
-import com.netnovelreader.data.database.SQLHelper
 
 /**
  * Created by yangbo on 2018/1/11.
@@ -10,7 +9,7 @@ import com.netnovelreader.data.database.SQLHelper
 class ReaderApplication : Application() {
     override fun onCreate() {
         super.onCreate()
-        appContext ?: run{ appContext = applicationContext }
+        appContext ?: run { appContext = applicationContext }
     }
 
     companion object {

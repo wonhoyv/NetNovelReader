@@ -22,7 +22,7 @@ fun getSavePath(): String {
 }
 
 //例如: http://www.hello.com/world/fjwoj/foew.html  中截取 hello.com
-fun url2Hostname(url: String) : String{
+fun url2Hostname(url: String): String {
     var hostname: String? = null
     var matcher = Pattern.compile(".*?//.*?\\.(.*?)/.*?").matcher(url)
     if (matcher.find())
@@ -30,24 +30,24 @@ fun url2Hostname(url: String) : String{
     return hostname ?: "error"
 }
 
-fun id2TableName(id: Int): String{
+fun id2TableName(id: Int): String {
     return "BOOK" + id
 }
 
-fun mkdirs(dir: String): String{
+fun mkdirs(dir: String): String {
     val file = File(dir)
-    if(!file.exists()){
+    if (!file.exists()) {
         file.mkdirs()
     }
     return file.toString()
 }
 
-fun getHeaders(url: String): HashMap<String, String>{
+fun getHeaders(url: String): HashMap<String, String> {
     var map = HashMap<String, String>()
     map.put("accept", "indicator/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8")
     map.put("user-agent", UA)
     map.put("Upgrade-Insecure-Requests", "1")
-    map.put("Connection","keep-alive")
+    map.put("Connection", "keep-alive")
     map.put("Referer", "http://www.${url2Hostname(url)}/")
     return map
 }

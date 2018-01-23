@@ -1,7 +1,5 @@
-package com.netnovelreader.data.network
+package com.netnovelreader.data
 
-import com.netnovelreader.data.database.SQLHelper
-import com.netnovelreader.data.database.ParseSQLManager
 import com.netnovelreader.common.TIMEOUT
 import com.netnovelreader.common.getHeaders
 import com.netnovelreader.common.url2Hostname
@@ -19,10 +17,10 @@ class ParseHtml {
     @Throws(IOException::class)
     fun getChapter(url: String): String {
         var txt: String?
-        val selector = ParseSQLManager().getChapterRule(url2Hostname(url), SQLHelper.CHAPTER_RULE)
-        if(selector == null || selector.length < 2){
+        val selector = SQLHelper.getParseRule(url2Hostname(url), SQLHelper.CHAPTER_RULE)
+        if (selector == null || selector.length < 2) {
             txt = getChapterWithSelector(url)
-        }else{
+        } else {
             txt = Jsoup.connect(url).headers(getHeaders(url))
                     .timeout(TIMEOUT).get().select(selector).text()
 
@@ -36,17 +34,17 @@ class ParseHtml {
      */
     @Throws(IOException::class)
     fun getCatalog(url: String): LinkedHashMap<String, String> {
-        val selector = ParseSQLManager().getChapterRule(url2Hostname(url), SQLHelper.CATALOG_RULE)
+        val selector = SQLHelper.getParseRule(url2Hostname(url), SQLHelper.CATALOG_RULE)
         val catalog = LinkedHashMap<String, String>()
         selector ?: return catalog
         val list = Jsoup.connect(url).headers(getHeaders(url))
                 .timeout(TIMEOUT).get().select(selector).select("a")
         list.forEach {
-            if(!it.text().contains("分卷阅读")){
+            if (!it.text().contains("分卷阅读")) {
                 var link = it.attr("href")
-                if(!link.contains("//")){
+                if (!link.contains("//")) {
                     link = url.substring(0, url.lastIndexOf('/') + 1) + link
-                }else if(link.startsWith("//")){
+                } else if (link.startsWith("//")) {
                     link = "http:" + link
                 }
                 catalog.put(it.text(), link)
@@ -59,9 +57,9 @@ class ParseHtml {
     fun getChapterWithSelector(url: String): String {
         val elements = Jsoup.connect(url).get().allElements
         val indexList = ArrayList<Element>()
-        if(elements.size > 1){
-            for(i in 1.. elements.size - 1){
-                if(elements[0].text().length > elements.get(i).text().length * 2){
+        if (elements.size > 1) {
+            for (i in 1..elements.size - 1) {
+                if (elements[0].text().length > elements.get(i).text().length * 2) {
                     indexList.add(elements[i])
                 }
             }

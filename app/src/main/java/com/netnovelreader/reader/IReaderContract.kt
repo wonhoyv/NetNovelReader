@@ -8,10 +8,11 @@ import com.netnovelreader.base.IViewModel
  * Created by yangbo on 18-1-13.
  */
 interface IReaderContract {
-    interface IReaderView: IView<ReaderViewModel>{
+    interface IReaderView : IView<ReaderViewModel> {
         fun showDialog()
     }
-    interface IReaderViewModel: IViewModel<ReaderBean> {
+
+    interface IReaderViewModel : IViewModel<ReaderBean> {
         fun initData(width: Int, height: Int, txtFontSize: Float)
         fun pageToNext(width: Int, height: Int, txtFontSize: Float)
         fun pageToPrevious(width: Int, height: Int, txtFontSize: Float)
