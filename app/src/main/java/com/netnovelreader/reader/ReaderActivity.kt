@@ -127,7 +127,7 @@ class ReaderActivity : AppCompatActivity(), IReaderContract.IReaderView, Gesture
         var catalogView: RecyclerView? = null
         if (dialog == null) {
             val builder = AlertDialog.Builder(this)
-            val view = LayoutInflater.from(this).inflate(R.layout.fragment_catalog, null)
+            val view = LayoutInflater.from(this).inflate(R.layout.dialog_catalog, null)
             catalogView = view.findViewById(R.id.catalogView)
             catalogView.layoutManager = LinearLayoutManager(this)
             catalogView.addItemDecoration(NovelItemDecoration(this))
@@ -138,6 +138,7 @@ class ReaderActivity : AppCompatActivity(), IReaderContract.IReaderView, Gesture
         }
         readerViewModel?.updateCatalog()
         catalogView?.adapter?.notifyDataSetChanged()
+        catalogView?.scrollToPosition(readerViewModel!!.pageIndicator[0] - 1)
         dialog?.show()
     }
 

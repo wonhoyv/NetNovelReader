@@ -32,22 +32,34 @@
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintLeft_toLeftOf="parent"
             app:layout_constraintRight_toRightOf="parent">
-            <TextView
+            <Button
                 android:id="@+id/catalogButton"
                 android:gravity="center"
                 android:layout_weight="1"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                style="?android:attr/buttonBarButtonStyle"
                 android:text="@string/catalogButton"
                 android:textColor="@color/black"
                 android:textSize="20sp"/>
-            <TextView
+            <Button
                 android:id="@+id/fontSizeButton"
                 android:gravity="center"
                 android:layout_weight="1"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                style="?android:attr/buttonBarButtonStyle"
                 android:text="@string/fontSizeButton"
+                android:textColor="@color/black"
+                android:textSize="20sp"/>
+            <Button
+                android:id="@+id/backgroundButton"
+                android:gravity="center"
+                android:layout_weight="1"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                style="?android:attr/buttonBarButtonStyle"
+                android:text="@string/backgroundButton"
                 android:textColor="@color/black"
                 android:textSize="20sp"/>
         </LinearLayout>

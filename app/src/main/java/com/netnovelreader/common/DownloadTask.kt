@@ -43,7 +43,7 @@ class DownloadTask(val tableName: String, val url: String) {
             synchronized(SQLHelper) {
                 SQLHelper.getDB().execSQL("update ${SQLHelper.TABLE_SHELF} set " +
                         "${SQLHelper.LATESTCHAPTER}='${entry.key}' where " +
-                        "${SQLHelper.ID}=${tableName.replace("BOOK", "")}")
+                        "${SQLHelper.ID}=${tableName2Id(tableName)}")
             }
         }
     }

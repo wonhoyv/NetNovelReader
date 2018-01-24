@@ -137,7 +137,7 @@ class ReaderViewModel(val bookName: String) : IReaderContract.IReaderViewModel {
      */
     fun getRecord(): IntArray {
         val queryResult = SQLHelper.getRecord(bookName) //阅读记录 3#2 表示第3章第2页
-        dirName = "BOOK${queryResult[0]}"
+        dirName = id2TableName(queryResult[0])
         var readRecord = queryResult[1]
         if (readRecord.length < 1) {
             readRecord = "1#1"

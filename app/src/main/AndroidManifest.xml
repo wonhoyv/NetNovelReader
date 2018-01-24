@@ -38,7 +38,6 @@
             android:theme="@style/AppTheme.NoActionBar" />
 
         <service android:name=".service.DownloadService" />
-
     </application>
 
 </manifest>

@@ -2,17 +2,15 @@ package com.netnovelreader.search
 
 import android.content.Intent
 import android.databinding.DataBindingUtil
-import android.databinding.ObservableArrayList
-import android.databinding.ObservableList
 import android.os.Bundle
 import android.support.v7.app.AppCompatActivity
 import android.support.v7.widget.DefaultItemAnimator
 import android.support.v7.widget.LinearLayoutManager
 import android.view.View
-import android.widget.SearchView
 import android.widget.Toast
 import com.netnovelreader.R
 import com.netnovelreader.base.IClickEvent
+import com.netnovelreader.common.ArrayListChangeListener
 import com.netnovelreader.common.BindingAdapter
 import com.netnovelreader.common.NovelItemDecoration
 import com.netnovelreader.databinding.ActivitySearchBinding
@@ -22,7 +20,7 @@ import kotlinx.android.synthetic.main.item_search.view.*
 
 class SearchActivity : AppCompatActivity(), ISearchContract.ISearchView {
     var searchViewModel: SearchViewModel? = null
-    var arrayListChangeListener = ArrayListChangeListener()
+    var arrayListChangeListener: ArrayListChangeListener<SearchBean>?= null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -36,14 +34,19 @@ class SearchActivity : AppCompatActivity(), ISearchContract.ISearchView {
     }
 
     override fun init() {
+//        searchToolbar.navigationIcon = getDrawable(R.drawable.icon_back)
+//        setSupportActionBar(searchToolbar)
+//        searchToolbar.setNavigationOnClickListener { this@SearchActivity.finish() }
         searchRecycler.layoutManager = LinearLayoutManager(this)
-        searchRecycler.adapter = BindingAdapter(searchViewModel?.resultList,
-                R.layout.item_search, SearchClickEvent())
+        var mAdapter = BindingAdapter(searchViewModel?.resultList, R.layout.item_search, SearchClickEvent())
+        searchRecycler.adapter = mAdapter
         searchRecycler.setItemAnimator(DefaultItemAnimator())
         searchRecycler.addItemDecoration(NovelItemDecoration(this))
+        arrayListChangeListener = ArrayListChangeListener(mAdapter)
         searchViewModel?.resultList?.addOnListChangedCallback(arrayListChangeListener)
-        //搜索事件监听
-        search_bar.setOnQueryTextListener(QueryListener())
+        searchViewBar.setOnQueryTextListener(QueryListener())
+        searchViewBar.isIconified = false
+        searchViewBar.onActionViewExpanded()
     }
 
     override fun onDestroy() {
@@ -51,8 +54,26 @@ class SearchActivity : AppCompatActivity(), ISearchContract.ISearchView {
         searchViewModel?.resultList?.removeOnListChangedCallback(arrayListChangeListener)
         searchViewModel = null
     }
+//
+//
+//    override fun onCreateOptionsMenu(menu: Menu): Boolean {
+//        var searchMenu = menuInflater.inflate(R.menu.menu_search, menu)
+////        //搜索事件监听
+//        var searchViewBar = findViewById<SearchView>(R.id.searchViewBar)
+//        return true
+//    }
+//    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+//        return when (item.itemId) {
+//            R.id.search_button -> {
+//                startActivity(Intent(this, SearchActivity::class.java))
+//                true
+//            }
+//            else -> super.onOptionsItemSelected(item)
+//        }
+//    }
 
-    inner class QueryListener : SearchView.OnQueryTextListener{
+
+    inner class QueryListener : android.support.v7.widget.SearchView.OnQueryTextListener{
         var tmp = ""
         var tmpTime = System.currentTimeMillis()
 
@@ -81,32 +102,6 @@ class SearchActivity : AppCompatActivity(), ISearchContract.ISearchView {
                 intent.putExtra("catalogurl", v.resultUrl.text.toString())
                 startService(intent)
             }
-        }
-    }
-
-    inner class ArrayListChangeListener : ObservableList.OnListChangedCallback<ObservableArrayList<SearchBean>>() {
-        override fun onChanged(p0: ObservableArrayList<SearchBean>?) {
-            notifyDataSetChanged()
-        }
-
-        override fun onItemRangeChanged(p0: ObservableArrayList<SearchBean>?, p1: Int, p2: Int) {
-            notifyDataSetChanged()
-        }
-
-        override fun onItemRangeInserted(p0: ObservableArrayList<SearchBean>?, p1: Int, p2: Int) {
-            notifyDataSetChanged()
-        }
-
-        override fun onItemRangeMoved(p0: ObservableArrayList<SearchBean>?, p1: Int, p2: Int, p3: Int) {
-            notifyDataSetChanged()
-        }
-
-        override fun onItemRangeRemoved(p0: ObservableArrayList<SearchBean>?, p1: Int, p2: Int) {
-            notifyDataSetChanged()
-        }
-
-        fun notifyDataSetChanged() {
-            runOnUiThread { searchRecycler.adapter.notifyDataSetChanged() }
         }
     }
 }

@@ -127,10 +127,13 @@ class DownloadService : Service() {
                                         .subscribeOn(Schedulers.from(executors!!))
                             }
                             .observeOn(AndroidSchedulers.mainThread())
-                            .subscribe {
+                            .subscribe({
                                 updateNotification(max, ++progress)
                                 stopOrContinue()
-                            }
+                            }, {
+                                updateNotification(max, ++progress)
+                                stopOrContinue()
+                            })
                 }
             }
         }

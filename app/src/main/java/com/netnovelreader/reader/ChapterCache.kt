@@ -56,7 +56,8 @@ class ChapterCache(val cacheNum: Int, val tableName: String) {
         val chapterPath = "${getSavePath()}/$dirName/$chapterName"
         if (!File(chapterPath).exists()) {
             if (!isCurrentChapter) {
-                sb.append(getFromNet("${getSavePath()}/$dirName", chapterName))
+                sb.append(getFromNet("${getSavePath()}/$dirName",
+                        chapterName))
             }
         } else {
             sb.append(getFromFile(chapterPath))

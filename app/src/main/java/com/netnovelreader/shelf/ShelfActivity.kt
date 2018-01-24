@@ -3,8 +3,6 @@ package com.netnovelreader.shelf
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.databinding.DataBindingUtil
-import android.databinding.ObservableArrayList
-import android.databinding.ObservableList
 import android.os.Bundle
 import android.support.v4.app.ActivityCompat
 import android.support.v7.app.AppCompatActivity
@@ -16,6 +14,7 @@ import android.view.View
 import android.widget.Toast
 import com.netnovelreader.R
 import com.netnovelreader.base.IClickEvent
+import com.netnovelreader.common.ArrayListChangeListener
 import com.netnovelreader.common.BindingAdapter
 import com.netnovelreader.common.NovelItemDecoration
 import com.netnovelreader.common.id2TableName
@@ -29,7 +28,7 @@ import kotlinx.android.synthetic.main.item_shelf.view.*
 class ShelfActivity : AppCompatActivity(), IShelfContract.IShelfView {
 
     var shelfViewModel: ShelfViewModel? = null
-    var arrayListChangeListener = ArrayListChangeListener()
+    var arrayListChangeListener: ArrayListChangeListener<ShelfBean>? = null
     var hasPermission = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -54,12 +53,13 @@ class ShelfActivity : AppCompatActivity(), IShelfContract.IShelfView {
     }
 
     override fun init() {
-        setSupportActionBar({ toolbar.setTitle(R.string.shelf_activity_title); toolbar }())
+        setSupportActionBar({ shelfToolbar.setTitle(R.string.shelf_activity_title); shelfToolbar }())
         shelfRecycler.layoutManager = LinearLayoutManager(this)
         shelfRecycler.addItemDecoration(NovelItemDecoration(this))
         shelfRecycler.setItemAnimator(DefaultItemAnimator())
-        shelfRecycler.adapter = BindingAdapter(shelfViewModel?.bookList, R.layout.item_shelf,
-                ShelfClickEvent())
+        val mAdapter = BindingAdapter(shelfViewModel?.bookList, R.layout.item_shelf, ShelfClickEvent())
+        shelfRecycler.adapter = mAdapter
+        arrayListChangeListener = ArrayListChangeListener(mAdapter)
         shelfViewModel?.bookList?.addOnListChangedCallback(arrayListChangeListener)
         shelf_layout.setColorSchemeResources(R.color.colorPrimary)
         var time = System.currentTimeMillis()
@@ -107,7 +107,11 @@ class ShelfActivity : AppCompatActivity(), IShelfContract.IShelfView {
                 startActivity(Intent(this, SearchActivity::class.java))
                 true
             }
-            R.id.action_settings -> true
+            R.id.action_settings -> {
+                val settingFragment = ShelfSettingFragment()
+                fragmentManager.beginTransaction().replace(R.id.settingLayout, settingFragment).commit()
+                true
+            }
             else -> super.onOptionsItemSelected(item)
         }
     }
@@ -152,35 +156,6 @@ class ShelfActivity : AppCompatActivity(), IShelfContract.IShelfView {
             shelfViewModel?.deleteBook(view.nameView.text.toString())
             shelfViewModel?.refreshBookList()
             return true
-        }
-    }
-
-    //recyclerview 数据集合ObservableArrayList 监听
-    inner class ArrayListChangeListener : ObservableList.OnListChangedCallback<ObservableArrayList<ShelfBean>>() {
-        override fun onChanged(p0: ObservableArrayList<ShelfBean>?) {
-            notifyDataSetChanged()
-        }
-
-        override fun onItemRangeChanged(p0: ObservableArrayList<ShelfBean>?, p1: Int, p2: Int) {
-            notifyDataSetChanged()
-        }
-
-        override fun onItemRangeInserted(p0: ObservableArrayList<ShelfBean>?, p1: Int, p2: Int) {
-            notifyDataSetChanged()
-        }
-
-        override fun onItemRangeMoved(p0: ObservableArrayList<ShelfBean>?, p1: Int, p2: Int, p3: Int) {
-            notifyDataSetChanged()
-        }
-
-        override fun onItemRangeRemoved(p0: ObservableArrayList<ShelfBean>?, p1: Int, p2: Int) {
-            notifyDataSetChanged()
-        }
-
-        fun notifyDataSetChanged() {
-            runOnUiThread {
-                shelfRecycler.adapter.notifyDataSetChanged()
-            }
         }
     }
 }
