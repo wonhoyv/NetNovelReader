@@ -221,7 +221,7 @@ object SQLHelper {
      */
     fun getChapterCount(tableName: String): Int {
         synchronized(SQLHelper) {
-            var c = 1
+            var c = -1
             val cursor = getDB().rawQuery("select count(*) from $tableName;", null)
             if (cursor.moveToFirst()) {
                 c = cursor.getInt(0)

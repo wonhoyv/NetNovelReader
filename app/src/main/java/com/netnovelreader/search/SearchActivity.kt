@@ -34,11 +34,8 @@ class SearchActivity : AppCompatActivity(), ISearchContract.ISearchView {
     }
 
     override fun init() {
-//        searchToolbar.navigationIcon = getDrawable(R.drawable.icon_back)
-//        setSupportActionBar(searchToolbar)
-//        searchToolbar.setNavigationOnClickListener { this@SearchActivity.finish() }
         searchRecycler.layoutManager = LinearLayoutManager(this)
-        var mAdapter = BindingAdapter(searchViewModel?.resultList, R.layout.item_search, SearchClickEvent())
+        val mAdapter = BindingAdapter(searchViewModel?.resultList, R.layout.item_search, SearchClickEvent())
         searchRecycler.adapter = mAdapter
         searchRecycler.setItemAnimator(DefaultItemAnimator())
         searchRecycler.addItemDecoration(NovelItemDecoration(this))
@@ -47,6 +44,7 @@ class SearchActivity : AppCompatActivity(), ISearchContract.ISearchView {
         searchViewBar.setOnQueryTextListener(QueryListener())
         searchViewBar.isIconified = false
         searchViewBar.onActionViewExpanded()
+        backButton.setOnClickListener { finish() }
     }
 
     override fun onDestroy() {
@@ -54,23 +52,6 @@ class SearchActivity : AppCompatActivity(), ISearchContract.ISearchView {
         searchViewModel?.resultList?.removeOnListChangedCallback(arrayListChangeListener)
         searchViewModel = null
     }
-//
-//
-//    override fun onCreateOptionsMenu(menu: Menu): Boolean {
-//        var searchMenu = menuInflater.inflate(R.menu.menu_search, menu)
-////        //搜索事件监听
-//        var searchViewBar = findViewById<SearchView>(R.id.searchViewBar)
-//        return true
-//    }
-//    override fun onOptionsItemSelected(item: MenuItem): Boolean {
-//        return when (item.itemId) {
-//            R.id.search_button -> {
-//                startActivity(Intent(this, SearchActivity::class.java))
-//                true
-//            }
-//            else -> super.onOptionsItemSelected(item)
-//        }
-//    }
 
 
     inner class QueryListener : android.support.v7.widget.SearchView.OnQueryTextListener{

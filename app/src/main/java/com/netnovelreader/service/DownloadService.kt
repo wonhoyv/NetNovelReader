@@ -123,7 +123,7 @@ class DownloadService : Service() {
                 } else {
                     Observable.fromIterable(downloadUnitList)
                             .flatMap {
-                                Observable.create<Int>({ e -> e.onNext(it.download(it.getChapterTxt())) })
+                                Observable.create<Int> { emitter -> emitter.onNext(it.download(it.getChapterTxt())) }
                                         .subscribeOn(Schedulers.from(executors!!))
                             }
                             .observeOn(AndroidSchedulers.mainThread())

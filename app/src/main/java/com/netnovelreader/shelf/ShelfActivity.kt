@@ -108,8 +108,8 @@ class ShelfActivity : AppCompatActivity(), IShelfContract.IShelfView {
                 true
             }
             R.id.action_settings -> {
-                val settingFragment = ShelfSettingFragment()
-                fragmentManager.beginTransaction().replace(R.id.settingLayout, settingFragment).commit()
+//                val settingFragment = ShelfSettingFragment()
+//                fragmentManager.beginTransaction().replace(R.id.settingLayout, settingFragment).commit()
                 true
             }
             else -> super.onOptionsItemSelected(item)

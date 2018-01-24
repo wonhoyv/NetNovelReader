@@ -35,11 +35,11 @@ class ChapterCache(val cacheNum: Int, val tableName: String) {
             try {
                 result = getText(chapterNum, true)
                 chapterTxtTable.put(chapterNum, result)
-                Thread { readToCache(chapterNum) }.start()
             } catch (e: IOException) {
                 result = ""
             }
         }
+        Thread { readToCache(chapterNum) }.start()
         return result ?: ""
     }
 
@@ -102,7 +102,7 @@ class ChapterCache(val cacheNum: Int, val tableName: String) {
         val arrayList = ArrayList<Int>(0)
         while (iterator.hasNext()) {
             val entry = iterator.next()
-            if (entry.key + 1 < chapterNum || entry.key - cacheNum > chapterNum) {
+            if (entry.key + 1 < chapterNum || entry.key - cacheNum > chapterNum || entry.value.length == 0) {
                 arrayList.add((entry.key))
             }
         }
@@ -111,12 +111,12 @@ class ChapterCache(val cacheNum: Int, val tableName: String) {
         }
         if (chapterNum > 1) {
             if (!chapterTxtTable.contains(chapterNum - 1)) {
-                chapterTxtTable.put(chapterNum, getText(chapterNum, false))
+                chapterTxtTable.put(chapterNum - 1, getText(chapterNum - 1, false))
             }
         }
         for (i in 1..cacheNum) {
             if (chapterNum + i <= maxChapterNum && !chapterTxtTable.contains(chapterNum + i)) {
-                chapterTxtTable.put(chapterNum, getText(chapterNum, false))
+                chapterTxtTable.put(chapterNum + i, getText(chapterNum + i, false))
             }
         }
     }

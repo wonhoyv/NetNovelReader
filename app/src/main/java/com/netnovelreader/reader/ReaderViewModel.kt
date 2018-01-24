@@ -56,6 +56,12 @@ class ReaderViewModel(val bookName: String) : IReaderContract.IReaderViewModel {
      */
     override fun initData(width: Int, height: Int, txtFontSize: Float) {
         pageIndicator[2] = getChapterCount()
+        if (pageIndicator[2] == 0) {
+            for (i in 0..3) {
+                pageIndicator[i] = 0
+            }
+            return
+        }
         val array = getRecord()
         pageIndicator[0] = array[0]
         pageIndicator[1] = array[1]
@@ -90,7 +96,7 @@ class ReaderViewModel(val bookName: String) : IReaderContract.IReaderViewModel {
 
     override fun pageToPrevious(width: Int, height: Int, txtFontSize: Float) {
         if (pageIndicator[1] < 2) {
-            if (pageIndicator[0] == 1) {
+            if (pageIndicator[0] < 2) {
                 return
             } else {
                 //上一章
@@ -114,6 +120,12 @@ class ReaderViewModel(val bookName: String) : IReaderContract.IReaderViewModel {
         pageIndicator[0] = SQLHelper.getChapterId(tableName, chapterName)
         pageIndicator[1] = 1
         getPage(pageIndicator, width, height, txtFontSize)
+        pageIndicator[3] = chapterText.size
+        if (pageIndicator[3] > 1) {
+            pageIndicator[1] = 1
+        } else {
+            pageIndicator[1] = pageIndicator[3]
+        }
         updateTextAndRecord(pageIndicator)
     }
 
@@ -150,7 +162,7 @@ class ReaderViewModel(val bookName: String) : IReaderContract.IReaderViewModel {
      * 获取章节总数
      */
     fun getChapterCount(): Int {
-        return SQLHelper.getChapterCount("BOOK${SQLHelper.getRecord(bookName)[0]}")
+        return SQLHelper.getChapterCount(tableName)
     }
 
     /**

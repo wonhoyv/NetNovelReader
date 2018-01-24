@@ -1,6 +1,5 @@
 package com.netnovelreader.shelf
 
-import android.databinding.BaseObservable
 import android.databinding.ObservableField
 import android.databinding.ObservableInt
 
@@ -11,4 +10,4 @@ data class ShelfBean(var bookid: ObservableInt,
                      var bookname: ObservableField<String>,
                      var latestChapter: ObservableField<String>,
                      var downloadURL: ObservableField<String>
-) : BaseObservable()
+)

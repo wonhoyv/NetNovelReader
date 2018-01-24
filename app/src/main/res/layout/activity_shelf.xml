@@ -3,7 +3,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools">
 
-    <android.support.constraint.ConstraintLayout
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:orientation="vertical"
@@ -13,10 +13,10 @@
             android:id="@+id/mtoolbar"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            app:layout_constraintTop_toTopOf="parent"
+            android:theme="@style/AppTheme.AppBarOverlay"
             app:layout_constraintLeft_toLeftOf="parent"
             app:layout_constraintRight_toRightOf="parent"
-            android:theme="@style/AppTheme.AppBarOverlay">
+            app:layout_constraintTop_toTopOf="parent">
 
             <android.support.v7.widget.Toolbar
                 android:id="@+id/shelfToolbar"
@@ -30,8 +30,8 @@
 
         <android.support.v4.widget.SwipeRefreshLayout
             android:id="@+id/shelf_layout"
-            android:layout_height="match_parent"
-            android:layout_width="match_parent">
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
             <android.support.v7.widget.RecyclerView
                 android:id="@+id/shelfRecycler"
                 android:layout_width="match_parent"
@@ -39,14 +39,5 @@
                 android:scrollbars="vertical" />
         </android.support.v4.widget.SwipeRefreshLayout>
 
-        <FrameLayout
-            android:id="@+id/settingLayout"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            app:layout_constraintTop_toBottomOf="@id/mtoolbar"
-            app:layout_constraintLeft_toLeftOf="parent"
-            app:layout_constraintRight_toRightOf="parent">
-        </FrameLayout>
-
-    </android.support.constraint.ConstraintLayout>
+    </LinearLayout>
 </layout>
