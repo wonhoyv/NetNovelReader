@@ -18,14 +18,12 @@ import android.view.View
 import android.widget.Toast
 import com.netnovelreader.R
 import com.netnovelreader.base.IClickEvent
-import com.netnovelreader.common.ArrayListChangeListener
-import com.netnovelreader.common.BindingAdapter
-import com.netnovelreader.common.NovelItemDecoration
-import com.netnovelreader.common.id2TableName
+import com.netnovelreader.common.*
+import com.netnovelreader.data.SQLHelper
 import com.netnovelreader.databinding.ActivityShelfBinding
+import com.netnovelreader.download.DownloadService
 import com.netnovelreader.reader.ReaderActivity
 import com.netnovelreader.search.SearchActivity
-import com.netnovelreader.service.DownloadService
 import kotlinx.android.synthetic.main.activity_shelf.*
 import kotlinx.android.synthetic.main.item_shelf.view.*
 
@@ -35,9 +33,10 @@ class ShelfActivity : AppCompatActivity(), IShelfContract.IShelfView {
     private var arrayListChangeListener: ArrayListChangeListener<ShelfBean>? = null
     private var hasPermission = false
     private var isFragmentShow = false
-    private var settingFragment: ShelfSettingFragment? = null
+    private var settingFragment: SettingFragment? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        ApplyPreference.setTheme(this)
         super.onCreate(savedInstanceState)
         setViewModel(ShelfViewModel())
         hasPermission = checkPermission(android.Manifest.permission.WRITE_EXTERNAL_STORAGE)
@@ -67,7 +66,7 @@ class ShelfActivity : AppCompatActivity(), IShelfContract.IShelfView {
         shelfRecycler.adapter = mAdapter
         arrayListChangeListener = ArrayListChangeListener(mAdapter)
         shelfViewModel?.bookList?.addOnListChangedCallback(arrayListChangeListener)
-        shelf_layout.setColorSchemeResources(R.color.colorPrimary)
+        shelf_layout.setColorSchemeResources(R.color.gray)
         var time = System.currentTimeMillis()
         shelf_layout.setOnRefreshListener {
             if (System.currentTimeMillis() - time > 2000) {
@@ -93,6 +92,7 @@ class ShelfActivity : AppCompatActivity(), IShelfContract.IShelfView {
         super.onDestroy()
         shelfViewModel?.bookList?.removeOnListChangedCallback(arrayListChangeListener)
         shelfViewModel = null
+        SQLHelper.closeDB()
     }
 
     //刷新书架数据
@@ -115,9 +115,9 @@ class ShelfActivity : AppCompatActivity(), IShelfContract.IShelfView {
             }
             R.id.action_settings -> {
                 isFragmentShow = true
-                settingFragment = ShelfSettingFragment()
+                settingFragment = SettingFragment()
                 fragmentManager.beginTransaction().replace(R.id.shelfFrameLayout, settingFragment).commit()
-                shelfToolbar.setTitle(R.string.action_settings)
+                shelfToolbar.setTitle(R.string.settings)
                 shelfToolbar.setNavigationIcon(R.drawable.icon_back)
                 shelfToolbar.setNavigationOnClickListener {removeFragment(settingFragment)
                 }
