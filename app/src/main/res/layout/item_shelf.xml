@@ -26,13 +26,12 @@
         <android.support.constraint.ConstraintLayout
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:layout_weight="1"
             android:onClick="@{clickEvent::itemOnClick}"
             android:onLongClick="@{clickEvent::itemOnLongClick}">
 
-            <com.netnovelreader.shelf.BookCoverView
+            <com.netnovelreader.shelf.BookCoverImage
                 android:id="@+id/bookCover"
-                android:layout_width="65dp"
+                android:layout_width="60dp"
                 android:layout_height="80dp"
                 android:layout_gravity="center_vertical"
                 android:layout_marginBottom="10dp"
@@ -45,24 +44,28 @@
 
             <TextView
                 android:id="@+id/nameView"
-                android:layout_width="wrap_content"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="16dp"
+                android:gravity="start"
                 android:text="@{itemDetail.bookname??``}"
-                android:textColor="@color/black"
                 android:textSize="18sp"
                 app:layout_constraintStart_toEndOf="@+id/bookCover"
                 app:layout_constraintTop_toTopOf="@+id/bookCover"
+                app:layout_constraintEnd_toEndOf="parent"
                 tools:text="小说名称" />
 
             <TextView
                 android:id="@+id/latestChapter"
-                android:layout_width="wrap_content"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
+                android:gravity="start"
+                android:text="@{itemDetail.latestChapter??``}"
                 android:textSize="14sp"
                 android:textStyle="italic"
                 app:layout_constraintBottom_toBottomOf="@+id/bookCover"
                 app:layout_constraintStart_toStartOf="@+id/nameView"
+                app:layout_constraintEnd_toEndOf="parent"
                 tools:text="最新章节  458" />
         </android.support.constraint.ConstraintLayout>
     </android.support.v7.widget.CardView>
