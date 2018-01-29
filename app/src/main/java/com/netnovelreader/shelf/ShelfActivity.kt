@@ -60,7 +60,6 @@ class ShelfActivity : AppCompatActivity(), IShelfContract.IShelfView {
     override fun init() {
         setSupportActionBar({ shelfToolbar.setTitle(R.string.shelf_activity_title); shelfToolbar }())
         shelfRecycler.layoutManager = LinearLayoutManager(this)
-        shelfRecycler.addItemDecoration(NovelItemDecoration(this))
         shelfRecycler.itemAnimator = DefaultItemAnimator()
         val mAdapter = BindingAdapter(shelfViewModel?.bookList, R.layout.item_shelf, ShelfClickEvent())
         shelfRecycler.adapter = mAdapter
