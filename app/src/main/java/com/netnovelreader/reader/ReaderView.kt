@@ -1,15 +1,18 @@
 package com.netnovelreader.reader
 
-import android.annotation.SuppressLint
 import android.content.Context
 import android.databinding.ObservableArrayList
-import android.graphics.*
+import android.graphics.Canvas
+import android.graphics.Paint
+import android.graphics.Typeface
+import android.support.v4.content.ContextCompat
 import android.util.AttributeSet
-import android.util.TypedValue
 import android.view.View
 import com.netnovelreader.R
+import com.netnovelreader.common.ApplyPreference
 import java.text.SimpleDateFormat
 import java.util.*
+import kotlin.reflect.KProperty
 
 /**
  * Created by yangbo on 2018/1/19.
@@ -17,25 +20,13 @@ import java.util.*
 
 class ReaderView : View {
     companion object {
-        val rowSpace = 2f                                  //行距
+        var rowSpace = 2f                                  //行距
     }
 
-    var txtFontColorId: Int = R.color.read_font_default    //字体颜色
-    var text: ObservableArrayList<String>? = null         //view显示的内容，第 0 item项是章节名字，第i项是第i行文字内容
-        set(text) {
-            field = text
-            invalidate()
-        }
-    var bgColorId: Int = R.color.read_bg_default           //背景颜色
-        set(value) {
-            field = value
-            postInvalidate()
-        }
-    var txtFontType: Typeface? = null                     //正文字体类型
-        set(value) {
-            field = value
-            postInvalidate()
-        }
+    var txtFontColorId: Int                               //字体颜色
+    var text: ObservableArrayList<String>? by InvalidateAfterSet(null)  //view显示的内容，第 0 item项是章节名字，第i项是第i行文字内容
+    var bgColorId: Int? by InvalidateAfterSet(R.color.read_font_default)      //背景颜色
+    var txtFontType: Typeface? by InvalidateAfterSet(null)              //正文字体类型//背景颜色
     internal var firstDrawListener: FirstDrawListener? = null
 
     private val mBottomPaint = Paint()                //绘制底部文字部分所用的画笔
@@ -45,20 +36,28 @@ class ReaderView : View {
 
 
     private var isFirstDraw = true
+    val timeFormatter: SimpleDateFormat
 
 
     constructor(context: Context) : super(context)
     constructor(context: Context, attrs: AttributeSet?) : super(context, attrs)
-    constructor(context: Context, attrs: AttributeSet?, defStyleAttr: Int) : super(context, attrs, defStyleAttr)
+    constructor(context: Context, attrs: AttributeSet?, defStyleAttr: Int) : super(
+        context,
+        attrs,
+        defStyleAttr
+    )
 
 
     init {
         mMainPaint.textSize = 40f
         mBottomPaint.isAntiAlias = true   //抗锯齿开启
         mMainPaint.isAntiAlias = true
+        rowSpace = ApplyPreference.getRowSpace(context)
+        txtFontColorId = R.color.read_font_default
+        bgColorId = R.color.read_bg_default
+        timeFormatter = SimpleDateFormat("HH:mm", Locale.getDefault())
     }
 
-    @SuppressLint("DrawAllocation", "SimpleDateFormat", "WrongConstant")
     override fun onDraw(canvas: Canvas) {
         if (isFirstDraw) {
             isFirstDraw = false
@@ -70,28 +69,27 @@ class ReaderView : View {
         super.onDraw(canvas)
 
 
-        canvas.drawColor(context.resources.getColor(bgColorId))                      //背景颜色
+        canvas.drawColor(ContextCompat.getColor(context, bgColorId!!))                      //背景颜色
 
 
         mBottomPaint.textSize = indicatorFontSize                                    //底部部分画笔大小
-        mBottomPaint.color = context.resources.getColor(txtFontColorId)              //底部部分字体颜色
+        mBottomPaint.color = ContextCompat.getColor(context, txtFontColorId)              //底部部分字体颜色
         mMainPaint.textSize = txtFontSize                                            //正文部分画笔大小
-        mMainPaint.color = context.resources.getColor(txtFontColorId)                //正文部分字体颜色
-        mMainPaint.typeface = txtFontType                                            //正文部分字体类型，我们准备了共5种字体
-
+        mMainPaint.color = ContextCompat.getColor(context, txtFontColorId)                //正文部分字体颜色
+        mMainPaint.typeface = txtFontType
         //绘制正文
         for (i in 1 until text!!.size) {
             canvas.drawText(
-                    this.text!![i].replace(" ", "    "),
-                    getMarginLeft(),
-                    getMarginTop() + (i - 1) * txtFontSize * rowSpace,
-                    mMainPaint
+                this.text!![i].replace(" ", "    "),
+                getMarginLeft(),
+                getMarginTop() + (i - 1) * txtFontSize * rowSpace,
+                mMainPaint
             )
         }
 
 
         //底部左下角绘制：时间            格式如： 14:40
-        val date = SimpleDateFormat("HH:mm").format(Date())
+        val date = timeFormatter.format(System.currentTimeMillis())
         val dateX = getMarginLeft()
         val dateY = height - indicatorFontSize
         canvas.drawText(date, dateX, dateY, mBottomPaint)//日期的文字 + 绘制日期的X坐标 + 绘制日期的Y坐标 + 绘制底部专用的画笔
@@ -99,13 +97,11 @@ class ReaderView : View {
 
         //底部右下角绘制：章节相关信息    格式为:    第 XXX 章节 YYY章节名  ：  n / 该章节总共页数
         canvas.drawText(
-                this.text!![0],
-                width - indicatorFontSize * text!![0].toCharArray().size,
-                height - indicatorFontSize,
-                mBottomPaint
+            this.text!![0],
+            width - mBottomPaint.measureText(text!![0]) - getMarginLeft(),
+            height - indicatorFontSize,
+            mBottomPaint
         )
-
-
     }
 
     //正文区域宽度
@@ -125,12 +121,23 @@ class ReaderView : View {
 
     private fun getMarginTop(): Float {
         val count =
-                ((height - indicatorFontSize) * 0.96f).toInt() / (txtFontSize * rowSpace).toInt()
+            ((height - indicatorFontSize) * 0.96f).toInt() / (txtFontSize * rowSpace).toInt()
         return ((height - indicatorFontSize) - count * txtFontSize * rowSpace) / 2 + txtFontSize
     }
 
     internal interface FirstDrawListener {
         fun doDrawPrepare()
+    }
+
+    inner class InvalidateAfterSet<T>(var value: T? = null) {
+        operator fun getValue(thisRef: Any?, property: KProperty<*>): T? {
+            return value
+        }
+
+        operator fun setValue(thisRef: Any?, property: KProperty<*>, value: T?) {
+            this.value = value
+            invalidate()
+        }
     }
 
 }

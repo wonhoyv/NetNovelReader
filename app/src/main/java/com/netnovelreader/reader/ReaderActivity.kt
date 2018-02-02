@@ -214,6 +214,7 @@ class ReaderActivity : AppCompatActivity(), IReaderContract.IReaderView,
         catalogView?.adapter?.notifyDataSetChanged()
         catalogView?.scrollToPosition(readerViewModel!!.pageIndicator[0] - 1)
         dialog?.show()
+        dialog?.window?.setLayout(readerView.width * 5 / 6, readerView.height * 9 / 10)
     }
 
     inner class CatalogItemClickListener : IClickEvent {
@@ -285,7 +286,12 @@ class ReaderActivity : AppCompatActivity(), IReaderContract.IReaderView,
                     }
 
             readerView.txtFontType = Config.getTypeface(context, typeFacePath)          //根据新的字体重新绘制视图
-            selectedFontTextView?.let { Config.setTextViewSelect(it, false); }  //将前次选中的字体TextView改变背景色
+            selectedFontTextView?.let {
+                Config.setTextViewSelect(
+                    it,
+                    false
+                )
+            }  //将前次选中的字体TextView改变背景色
             selectedFontTextView = view
             Config.setTextViewSelect(view, true)                                 //为当前选中的字体TextView改变背景色
 
