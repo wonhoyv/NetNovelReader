@@ -1,4 +1,4 @@
-package com.netnovelreader.download
+package com.netnovelreader.service
 
 import android.app.NotificationManager
 import android.app.Service
@@ -7,6 +7,8 @@ import android.os.IBinder
 import android.support.v4.app.NotificationCompat
 import android.widget.Toast
 import com.netnovelreader.R
+import com.netnovelreader.common.download.DownloadChapter
+import com.netnovelreader.common.download.DownloadTask
 import io.reactivex.Observable
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.schedulers.Schedulers
@@ -65,8 +67,8 @@ class DownloadService : Service() {
         synchronized(this) {
             if (queue != null || intent != null) {
                 val t = DownloadTask(
-                    intent!!.getStringExtra("tableName"),
-                    intent.getStringExtra("catalogurl")
+                        intent!!.getStringExtra("tableName"),
+                        intent.getStringExtra("catalogurl")
                 )
                 if (max == -1) {
                     queue!!.offer(t)
