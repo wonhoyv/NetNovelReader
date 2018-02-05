@@ -104,9 +104,7 @@ class ReaderActivity : AppCompatActivity(), IReaderContract.IReaderView,
 
     override fun onBackPressed() {
         if (footView.visibility == View.VISIBLE) {
-            headerView.visibility = View.INVISIBLE
-            footView.visibility = View.INVISIBLE
-            fontSetting.visibility = View.INVISIBLE
+            hideHeaderFoot()
         } else {
             super.onBackPressed()
         }
@@ -198,6 +196,7 @@ class ReaderActivity : AppCompatActivity(), IReaderContract.IReaderView,
             headerView.visibility = View.INVISIBLE
             footView.visibility = View.INVISIBLE
             fontSetting.visibility = View.INVISIBLE
+            backgroundSetting.visibility = View.INVISIBLE
             return true
         }
         return false
@@ -255,13 +254,23 @@ class ReaderActivity : AppCompatActivity(), IReaderContract.IReaderView,
                     headerView.visibility = View.INVISIBLE
                     footView.visibility = View.INVISIBLE
                     fontSetting.visibility = View.INVISIBLE
+                    backgroundSetting.visibility = View.INVISIBLE
                     showDialog()
                 }
                 fontSizeButton -> {
+                    backgroundSetting.visibility = View.INVISIBLE
                     if (fontSetting.visibility == View.VISIBLE) {
                         fontSetting.visibility = View.INVISIBLE
                     } else {
                         fontSetting.visibility = View.VISIBLE
+                    }
+                }
+                backgroundButton -> {
+                    fontSetting.visibility = View.INVISIBLE
+                    if (backgroundSetting.visibility == View.VISIBLE) {
+                        backgroundSetting.visibility = View.INVISIBLE
+                    } else {
+                        backgroundSetting.visibility = View.VISIBLE
                     }
                 }
             }

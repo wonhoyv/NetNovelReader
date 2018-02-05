@@ -56,12 +56,10 @@ class ShelfViewModel : IShelfContract.IShelfViewModel {
         return true
     }
 
-    //取消书籍更新标志"●"
+    //取消书籍更新标志"●",设为最近阅读
     override fun cancelUpdateFlag(bookname: String) {
-        SQLHelper.getDB().execSQL(
-                "update ${SQLHelper.TABLE_SHELF} set ${SQLHelper.ISUPDATE}='' " +
-                        "where ${SQLHelper.BOOKNAME}='$bookname';"
-        )
+        SQLHelper.cancelUpdateFlag(bookname)
+        SQLHelper.setLatestRead(bookname)
     }
 
     /**

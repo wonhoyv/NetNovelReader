@@ -294,8 +294,8 @@ class ReaderView : View, GestureDetector.OnGestureListener {
                 }
                 "text" -> {
                     flushTextArray()
-                    if (pageFlag < 1 && maxPageNum == 0) {
-                        pageNum = 0
+                    if (pageFlag < 2) {
+                        if (maxPageNum == 0) pageNum = 0
                         return
                     }
                     pageNum = if (pageFlag > 2) maxPageNum else if (maxPageNum == 0) 0 else 1

@@ -72,6 +72,7 @@ class SearchActivity : AppCompatActivity(), ISearchContract.ISearchView {
     }
 
     override fun onBackPressed() {
+        if (searchloadingbar.isShown) return
         CatalogCache.clearCache()
         super.onBackPressed()
     }
@@ -114,11 +115,11 @@ class SearchActivity : AppCompatActivity(), ISearchContract.ISearchView {
     //搜索列表item点击事件
     inner class SearchItemClickEvent : IClickEvent {
         fun onClick(v: View) {
-            searchloadingbar.show()
             val catalogUrl = v.resultUrl.text.toString()
             val tableName = searchViewModel!!.addBookToShelf(v.resultName.text.toString(), catalogUrl)
             val isChangeSource = !intent.getStringExtra("bookname").isNullOrEmpty()
             val listener = DialogInterface.OnClickListener { dialog, which ->
+                searchloadingbar.show()
                 Observable.create<Boolean> {
                     try {
                         searchViewModel?.saveBookImage(tableName, v.resultName.text.toString())
