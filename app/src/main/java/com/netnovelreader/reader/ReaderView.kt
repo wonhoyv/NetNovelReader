@@ -7,7 +7,6 @@ import android.graphics.Paint
 import android.graphics.Typeface
 import android.support.v4.content.ContextCompat
 import android.util.AttributeSet
-import android.util.Log
 import android.view.GestureDetector
 import android.view.MotionEvent
 import android.view.View
@@ -204,24 +203,24 @@ class ReaderView : View, GestureDetector.OnGestureListener {
 
     //向前翻页
     private fun pageToPrevious() {
-        pageListener?.onPageChange()
         pageFlag = 3
         if (pageNum!! < 2) {
             pageListener?.previousChapter()
         } else {
             pageNum = pageNum!! - 1
         }
+        pageListener?.onPageChange()
     }
 
     //向后翻页
     private fun pageToNext() {
-        pageListener?.onPageChange()
         pageFlag = 2
         if (pageNum!! < maxPageNum) {
             pageNum = pageNum!! + 1
         } else {
             pageListener?.nextChapter()
         }
+        pageListener?.onPageChange()
     }
 
     private fun flushTextArray() {

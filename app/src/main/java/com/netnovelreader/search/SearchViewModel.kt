@@ -1,23 +1,21 @@
 package com.netnovelreader.search
 
-import android.util.Log
 import com.netnovelreader.api.ApiManager
 import com.netnovelreader.api.bean.KeywordsBean
-import com.netnovelreader.api.bean.QuerySuggest
 import com.netnovelreader.common.*
 import com.netnovelreader.common.data.SQLHelper
 import com.netnovelreader.common.data.SearchBook
 import com.netnovelreader.common.download.CatalogCache
-import kotlinx.coroutines.experimental.launch
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.schedulers.Schedulers
+import kotlinx.coroutines.experimental.launch
+import kotlinx.coroutines.experimental.newFixedThreadPoolContext
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
 import java.net.URLEncoder
-import java.util.concurrent.Executors
 
 /**
  * Created by yangbo on 18-1-14.
@@ -55,8 +53,9 @@ class SearchViewModel : ISearchContract.ISearchViewModel {
         launch {
             resultList.clear()
             CatalogCache.clearCache()
+            val poolContext = newFixedThreadPoolContext(THREAD_NUM, "DownloadService")
             SQLHelper.queryAllSearchSite().forEach {
-                launch {
+                launch(poolContext) {
                     searchBookFromSite(bookname, it, searchCode)      //查询所有搜索站点设置，然后逐个搜索
                 }
             }

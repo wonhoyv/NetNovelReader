@@ -11,7 +11,7 @@ import java.io.IOException
 class DownloadTask(val tableName: String, val url: String) {
 
     @Throws(IOException::class)
-    fun listAll(): ArrayList<DownloadChapter> {
+    fun getList(): ArrayList<DownloadChapter> {
         DownloadCatalog(tableName, url).download()
         val runnables = ArrayList<DownloadChapter>()
         SQLHelper.getChapterNameAndUrl(tableName, 0).forEach {

@@ -6,13 +6,12 @@ import android.content.Intent
 import android.support.v4.app.NotificationCompat
 import android.widget.Toast
 import com.netnovelreader.R
+import com.netnovelreader.common.THREAD_NUM
 import com.netnovelreader.common.download.DownloadTask
-import io.reactivex.Observable
-import io.reactivex.android.schedulers.AndroidSchedulers
-import io.reactivex.schedulers.Schedulers
-import java.io.IOException
-import java.util.concurrent.ExecutorService
-import java.util.concurrent.Executors
+import kotlinx.coroutines.experimental.ThreadPoolDispatcher
+import kotlinx.coroutines.experimental.async
+import kotlinx.coroutines.experimental.launch
+import kotlinx.coroutines.experimental.newFixedThreadPoolContext
 import java.util.concurrent.LinkedBlockingQueue
 import java.util.concurrent.atomic.AtomicInteger
 
@@ -26,21 +25,21 @@ class DownloadService : IntentService {
     private var mNotificationManager: NotificationManager? = null
     private var builder: NotificationCompat.Builder? = null
     private val NOTIFYID = 1599407175
-    var executors: ExecutorService? = null
-    var lock: LinkedBlockingQueue<Int>? = null
+    lateinit var lock: LinkedBlockingQueue<Int>
+    lateinit var poolContext: ThreadPoolDispatcher
 
     @Volatile
-    var max = 0                 //下载总数
+    private var max = 0                 //下载总数
     private var progress = AtomicInteger()     //下载完成数（包括失败的下载）
-    var failed = AtomicInteger()              //失败的下载数
+    private var failed = AtomicInteger()              //失败的下载数
     @Volatile
-    var remainder = 0            //待下载的书籍数
+    private var remainder = 0            //待下载的书籍数
 
     override fun onCreate() {
         super.onCreate()
         openNotification()
         lock = LinkedBlockingQueue()
-        executors = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors() / 2)
+        poolContext = newFixedThreadPoolContext(THREAD_NUM, "DownloadService")
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -54,57 +53,51 @@ class DownloadService : IntentService {
         val tableName = intent?.getStringExtra("tableName")
         val catalogUrl = intent?.getStringExtra("catalogurl")
         if (intent == null || tableName.isNullOrEmpty() || catalogUrl.isNullOrEmpty()) return
-        val downloadUnitList = DownloadTask(tableName!!, catalogUrl!!).listAll()
-        if ({ max = downloadUnitList.size; max }() < 1) return
-        Observable.fromIterable(downloadUnitList)
-                .flatMap {
-                    Observable.create<Int> { emitter ->
-                        try {
-                            it.download(it.getChapterTxt())
-                            progress.incrementAndGet()
-                        } catch (e: IOException) {
-                            failed.incrementAndGet()
-                        }finally {
-                            emitter.onNext(progress.get())
+        launch {
+            DownloadTask(tableName!!, catalogUrl!!).getList().apply { max = this.size }
+                .forEach {
+                    async(poolContext) { it.download(it.getChapterTxt()) }
+                        .invokeOnCompletion {
+                            synchronized(IntentService::class.java) {
+                                if (it == null) {
+                                    progress.incrementAndGet()
+                                } else {
+                                    failed.incrementAndGet()
+                                }
+                                updateNotification(progress.get(), max)
+                                if (progress.get() + failed.get() == max) lock.offer(1)
+                            }
                         }
-                    }.subscribeOn(Schedulers.from(executors!!))
-                }.observeOn(AndroidSchedulers.mainThread())
-                .subscribe {
-                    synchronized(IntentService::class.java) {
-                        if (it >= progress.get()) {
-                            updateNotification(it, max)
-                            if (progress.get() + failed.get() == max) lock?.offer(1)
-                        }
-                    }
                 }
-        lock?.take()
+        }
+        lock.take()
     }
 
     override fun onDestroy() {
         super.onDestroy()
         mNotificationManager?.cancel(NOTIFYID)
-        if (failed .get()> 0) {
+        if (failed.get() > 0) {
             Toast.makeText(
-                    this, getString(R.string.downloadfailed).replace("nn", "$failed"),
-                    Toast.LENGTH_LONG
+                this, getString(R.string.downloadfailed).replace("nn", "$failed"),
+                Toast.LENGTH_LONG
             ).show()
         }
     }
 
     private fun openNotification() {
         builder = NotificationCompat.Builder(this, "reader")
-                .setTicker(getString(R.string.app_name))
-                .setContentTitle(getString(R.string.prepare_download))
-                .setSmallIcon(R.drawable.ic_launcher_background)
+            .setTicker(getString(R.string.app_name))
+            .setContentTitle(getString(R.string.prepare_download))
+            .setSmallIcon(R.drawable.ic_launcher_background)
         mNotificationManager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
         mNotificationManager?.notify(NOTIFYID, builder?.build())
     }
 
     fun updateNotification(progress: Int, max: Int) {
         val str = if (remainder != 0) ",${getString(R.string.wait4download)}"
-                .replace("nn", "$remainder") else ""
+            .replace("nn", "$remainder") else ""
         builder?.setProgress(max, progress, false)
-                ?.setContentTitle("${getString(R.string.downloading)}:${progress}/$max$str")
+            ?.setContentTitle("${getString(R.string.downloading)}:${progress}/$max$str")
         mNotificationManager?.notify(NOTIFYID, builder?.build())
     }
 }

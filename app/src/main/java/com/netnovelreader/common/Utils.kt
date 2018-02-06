@@ -15,6 +15,7 @@ val UA = "Mozilla/5.0 (X11; Linux x86_64; rv:58.0) Gecko/20100101 Firefox/58.0"
 val PREFERENCE_NAME = "com.netnovelreader_preferences"
 val UPDATEFLAG = "●"  //书籍有更新，显示该标志
 val NotDeleteNum = 3 //自动删除已读章节，但保留最近3章
+val THREAD_NUM = Runtime.getRuntime().availableProcessors() * 2 / 3 //线程数
 
 fun getSavePath(): String = if (Environment.getExternalStorageState() == Environment.MEDIA_MOUNTED) {
     Environment.getExternalStorageDirectory().path + "/netnovelreader"
