@@ -7,6 +7,7 @@ import android.graphics.Paint
 import android.graphics.Typeface
 import android.support.v4.content.ContextCompat
 import android.util.AttributeSet
+import android.util.Log
 import android.view.GestureDetector
 import android.view.MotionEvent
 import android.view.View
@@ -30,11 +31,11 @@ class ReaderView : View, GestureDetector.OnGestureListener {
     var txtFontType: Typeface? by InvalidateAfterSet(null)           //正文字体类型//背景颜色
     private val mBottomPaint = Paint()                                     //绘制底部文字部分所用的画笔
     private val mMainPaint = Paint()                                       //绘制正文部分所用的画笔
-    var txtFontSize: Float? by InvalidateAfterSet(50f)               //正文部分默认画笔的大小,单位是像素px
-    var indicatorFontSize: Float = 35f                                     //底部部分默认画笔的大小，单位是像素px
+    var txtFontSize: Float? by InvalidateAfterSet(50f)               //正文部分默认画笔的大小
+    var indicatorFontSize: Float = 35f                                     //底部部分默认画笔的大小
 
     var text: ObservableField<String>? by InvalidateAfterSet(null)    //一个未分割章节,格式：章节名|正文
-    lateinit var textArray: ArrayList<ArrayList<String>>                    //分割后的章节,view显示的内容，第i项是第i行文字内容
+    var textArray: ArrayList<ArrayList<String>>? = null                     //分割后的章节,view显示的内容，第i项是第i行文字内容
     var title: String? by InvalidateAfterSet("")                      //章节名称
     var pageNum: Int? by InvalidateAfterSet(1)                        //页数
     var maxPageNum = 0
@@ -93,7 +94,6 @@ class ReaderView : View, GestureDetector.OnGestureListener {
         bgColorId = R.color.read_bg_default
         timeFormatter = SimpleDateFormat("HH:mm", Locale.getDefault())
         detector = GestureDetector(context, this)
-        textArray = ArrayList()
         mBottomPaint.textSize = indicatorFontSize                                  //底部部分画笔大小
     }
 
@@ -131,11 +131,11 @@ class ReaderView : View, GestureDetector.OnGestureListener {
                 mBottomPaint
         )
 
-        if (textArray.size < 1 || pageNum!! < 1) return              //正文内容缺乏，直接不绘制了
+        if (textArray == null || maxPageNum < 1) return              //正文内容缺乏，直接不绘制了
         //绘制正文
-        for (i in 0 until textArray[pageNum!! - 1].size) {
+        for (i in 0 until textArray!![pageNum!! - 1].size) {
             canvas.drawText(
-                    textArray[pageNum!! - 1][i].replace(" ", "    "),
+                    textArray!![pageNum!! - 1][i].replace(" ", "    "),
                     getMarginLeft(),
                     getMarginTop() + i * txtFontSize!! * rowSpace,
                     mMainPaint
@@ -230,12 +230,8 @@ class ReaderView : View, GestureDetector.OnGestureListener {
         val indexOfDelimiter = str!!.indexOf("|")       //text格式 ： 章节名|正文
         title = str.substring(0, indexOfDelimiter)
         val tx = str.substring(indexOfDelimiter + 1)
-        textArray.clear()
-        textArray.addAll(spliteText(tx))
-        maxPageNum = textArray.size
-        if (tx == ChapterCache.FILENOTFOUND) {
-            maxPageNum = 0
-        }
+        textArray = spliteText(tx)
+        maxPageNum = if (tx == ChapterCache.FILENOTFOUND) 0 else textArray!!.size
     }
 
     private fun spliteText(text: String?): ArrayList<ArrayList<String>> {
@@ -246,7 +242,7 @@ class ReaderView : View, GestureDetector.OnGestureListener {
             val tmp = "  " + it.trim()
             val totalCount = getTextWidth() / txtFontSize!!.toInt() //一行容纳字数
             for (i in 0..tmp.length / totalCount) {
-                tmplist.add(tmp.filterIndexed { index, c -> index > i * totalCount - 1 && index < (i + 1) * totalCount })
+                tmplist.add(tmp.filterIndexed { index, _ -> index > i * totalCount - 1 && index < (i + 1) * totalCount })
             }
         }
         val arrayList = ArrayList<ArrayList<String>>()
@@ -282,6 +278,7 @@ class ReaderView : View, GestureDetector.OnGestureListener {
             return value
         }
 
+        @Synchronized
         operator fun setValue(thisRef: Any?, property: KProperty<*>, value: T?) {
             @Volatile
             this.value = value
@@ -289,16 +286,17 @@ class ReaderView : View, GestureDetector.OnGestureListener {
                 "txtFontSize" -> {
                     val scale = maxPageNum.toFloat() / pageNum!!
                     flushTextArray()
-                    pageNum = (maxPageNum / scale).toInt()
-                    if (pageNum == 0) pageNum = 1
+                    pageNum = (maxPageNum / scale).toInt().takeIf { it != 0 } ?: 1
                 }
                 "text" -> {
                     flushTextArray()
-                    if (pageFlag < 2) {
-                        if (maxPageNum == 0) pageNum = 0
-                        return
+                    pageNum = when(pageFlag){
+                        0 -> if(maxPageNum == 0) 0 else pageNum
+                        1,2 -> if(maxPageNum == 0) 0 else 1
+                        3 -> maxPageNum
+                        else -> 1
                     }
-                    pageNum = if (pageFlag > 2) maxPageNum else if (maxPageNum == 0) 0 else 1
+
                 }
                 else -> invalidate()
             }

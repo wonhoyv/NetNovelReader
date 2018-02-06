@@ -6,14 +6,13 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Color
 import android.util.Log
-import com.netnovelreader.common.IMAGENAME
-import com.netnovelreader.common.ObservableSyncArrayList
+import com.netnovelreader.common.*
 import com.netnovelreader.common.data.SQLHelper
 import com.netnovelreader.common.download.DownloadCatalog
-import com.netnovelreader.common.getSavePath
-import com.netnovelreader.common.id2TableName
 import io.reactivex.Observable
 import io.reactivex.schedulers.Schedulers
+import kotlinx.coroutines.experimental.async
+import kotlinx.coroutines.experimental.launch
 import java.io.File
 import java.io.IOException
 import java.util.*
@@ -67,67 +66,63 @@ class ShelfViewModel : IShelfContract.IShelfViewModel {
      */
     @Synchronized
     override fun refreshBookList() {
-        val arrayList = ArrayList<BookBean>()
-        val bookDirList = dirBookList()
-        val map = SQLHelper.queryShelfBookList()
-        map.forEach {
-            val bookBean = BookBean(ObservableInt(it.key), ObservableField(it.value[0]), ObservableField(it.value[1]),
-                    ObservableField(it.value[2]), ObservableField(getBitmap(it.key)), ObservableField(it.value[3]))
-            if (bookDirList.contains(id2TableName(bookBean.bookid.get()))) {
-                arrayList.add(bookBean)
-                Thread { updateCatalog(bookBean) }.start()
-            } else {
-                Thread { deleteBook(bookBean.bookname.get() ?: "") }.start()
+        launch {
+            val arrayList = ArrayList<BookBean>()
+            val bookDirList = dirBookList()
+            SQLHelper.queryShelfBookList().forEach {
+                val bookBean = BookBean(ObservableInt(it.key), ObservableField(it.value[0]), ObservableField(it.value[1]),
+                        ObservableField(it.value[2]), ObservableField(getBitmap(it.key)), ObservableField(it.value[3]))
+                if (bookDirList.contains(id2TableName(bookBean.bookid.get()))) {
+                    arrayList.add(bookBean)
+                    updateCatalog(bookBean, false)
+                } else {
+                    launch { deleteBook(bookBean.bookname.get() ?: "") }
+                }
             }
+            bookList.clear()
+            bookList.addAll(arrayList)
         }
-        bookList.clear()
-        bookList.addAll(arrayList)
     }
 
     //删除书籍
     override fun deleteBook(bookname: String) {
-        val id = SQLHelper.removeBookFromShelf(bookname)
-        if (id == -1) return
-        Thread {
-            SQLHelper.dropTable(id2TableName(id))
-            File(getSavePath(), id2TableName(id)).deleteRecursively()
-        }.start()
+        launch {
+            SQLHelper.removeBookFromShelf(bookname).takeIf { it > -1 }?.apply {
+                SQLHelper.dropTable(id2TableName(this))
+                File(getSavePath(), id2TableName(this)).deleteRecursively()
+            }
+        }
     }
 
     //获取文件夹里面的书列表
-    private fun dirBookList(): ArrayList<String> {
-        val list = ArrayList<String>()
-        val file = File(getSavePath())
-        if (file.exists()) {
-            file.list().forEach {
-                list.add(it)
-            }
-        }
-        return list
+    private suspend fun dirBookList(): ArrayList<String> {
+        return async {
+            val list = ArrayList<String>()
+            File(getSavePath()).takeIf { it.exists() }?.list()?.forEach { list.add(it) }
+            list
+        }.await()
     }
 
     //更新目录
-    private fun updateCatalog(bookBean: BookBean) {
-        val tableName = id2TableName(bookBean.bookid.get())
-        if (SQLHelper.getChapterCount(tableName) == 0) {
-            try {
-                DownloadCatalog(tableName, bookBean.downloadURL.get() ?: "").download()
-            } catch (e: IOException) {
-                Log.d("Reader:ShelfViewModel", e.printStackTrace().toString())
+    private suspend fun updateCatalog(bookBean: BookBean, must: Boolean): Int {
+        return async {
+            val tableName = id2TableName(bookBean.bookid.get())
+            if (must || SQLHelper.getChapterCount(tableName) == 0) {
+                try {
+                    DownloadCatalog(tableName, bookBean.downloadURL.get() ?: "").download()
+                } catch (e: IOException) {
+                    e.printStackTrace()
+                }
             }
-        }
+            1
+        }.await()
     }
 
     //书架将要显示的书籍封面图片
-    private fun getBitmap(bookId: Int): Bitmap {
-        val file = File(getSavePath() + "/${id2TableName(bookId)}", IMAGENAME)
-        var bitmap: Bitmap? = null
-        if (file.exists()) {
-            bitmap = BitmapFactory.decodeFile(file.path)
-        }
-        return bitmap ?: Bitmap.createBitmap(
-                IntArray(45 * 60) { _ -> Color.parseColor("#7092bf") },
-                45, 60, Bitmap.Config.RGB_565
-        )
-    }
+    private suspend fun getBitmap(bookId: Int): Bitmap = async {
+        File("${getSavePath()}/${id2TableName(bookId)}", IMAGENAME)
+                .takeIf { it.exists() }
+                ?.let { BitmapFactory.decodeFile(it.path) }
+                ?: getDefaultCover()
+    }.await()
 }

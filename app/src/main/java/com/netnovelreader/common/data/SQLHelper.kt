@@ -214,7 +214,7 @@ object SQLHelper {
      * @isDownloaded  0表示未下载,1表示已下载
      * 获取未下载，或已下载的章节列表，反回map<章节名，该章节url>
      */
-    fun getChapterList(tableName: String, isDownloaded: Int): LinkedHashMap<String, String> {
+    fun getChapterNameAndUrl(tableName: String, isDownloaded: Int): LinkedHashMap<String, String> {
         synchronized(SQLHelper) {
             val map = LinkedHashMap<String, String>()
             val cursor = getDB().rawQuery(
@@ -394,7 +394,7 @@ object SQLHelper {
         }
 
         override fun onUpgrade(db: SQLiteDatabase?, oldVersion: Int, newVersion: Int) {
-            TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+
         }
 
         private fun initTable(db: SQLiteDatabase?) {

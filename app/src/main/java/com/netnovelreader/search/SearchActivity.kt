@@ -142,6 +142,7 @@ class SearchActivity : AppCompatActivity(), ISearchContract.ISearchView {
         private var tmpTime = System.currentTimeMillis()
 
         override fun onQueryTextSubmit(query: String): Boolean {
+            searchloadingbar.hide()
             if (tmp == query && System.currentTimeMillis() - tmpTime < 1000) return true  //点击间隔小于1秒，并且搜索书名相同不再搜索
             if (query.isNotEmpty()) {
                 searchViewModel?.searchBook(query)
@@ -220,6 +221,7 @@ class SearchActivity : AppCompatActivity(), ISearchContract.ISearchView {
     //搜索列表item点击事件
     inner class SearchItemClickEvent : IClickEvent {
         fun onClick(v: View) {
+            searchloadingbar.hide()
             val catalogUrl = v.resultUrl.text.toString()
             val tableName = searchViewModel!!.addBookToShelf(v.resultName.text.toString(), catalogUrl)
             val isChangeSource = !intent.getStringExtra("bookname").isNullOrEmpty()
