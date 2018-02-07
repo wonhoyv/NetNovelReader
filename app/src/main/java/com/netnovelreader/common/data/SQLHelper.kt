@@ -88,6 +88,19 @@ object SQLHelper {
         }
     }
 
+    fun getBookId(bookname: String): Int {
+        var id = 1
+        val cursor = SQLHelper.getDB().rawQuery(
+            "select ${SQLHelper.ID} from " +
+                    "${SQLHelper.TABLE_SHELF} where ${SQLHelper.BOOKNAME}='$bookname';", null
+        )
+        if (cursor.moveToFirst()) {
+            id = cursor.getInt(0)
+        }
+        cursor.close()
+        return id
+    }
+
     fun cancelUpdateFlag(bookname: String) {
         getDB().execSQL(
             "update ${SQLHelper.TABLE_SHELF} set ${SQLHelper.ISUPDATE}='' where ${SQLHelper.BOOKNAME}='$bookname';"
@@ -374,8 +387,8 @@ object SQLHelper {
                             "$CATALOG_FILTER varchar(128),$CHAPTER_FILTER text);"
             )
             db?.execSQL(
-                    "insert into $TABLE_PARSERULES values (1,'qidian.com','.volume-wrap'," +
-                            "'.read-content','分卷阅读|订阅本卷',NULL);"
+                "insert into $TABLE_PARSERULES values (1,'qidian.com','#volumes'," +
+                        "'.read-section','分卷阅读|订阅本卷',NULL);"
             )
             db?.execSQL(
                     "insert into $TABLE_PARSERULES values (2,'yunlaige.com','#contenttable'," +

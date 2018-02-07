@@ -121,8 +121,10 @@ class ReaderActivity : AppCompatActivity(), IReaderContract.IReaderView,
                     .takeIf { it ?: true }
                     ?.run {
                         loadingbar.show()
-                        if (readerViewModel?.downloadChapter(readerView.title)
-                                        ?: false) loadingbar.hide()
+                        val chapterName =
+                            if (readerView.title.isNullOrEmpty()) null else readerView.title
+                        if (readerViewModel?.downloadAndShow(chapterName) ?: false)
+                            loadingbar.hide()
                     }
         }
     }
@@ -141,7 +143,7 @@ class ReaderActivity : AppCompatActivity(), IReaderContract.IReaderView,
                     .takeIf { it ?: true }
                     ?.run {
                         loadingbar.show()
-                        if (readerViewModel?.downloadChapter(readerView.title) ?: false)
+                        if (readerViewModel?.downloadAndShow(readerView.title) ?: false)
                             loadingbar.hide()
                     }
         }
@@ -153,7 +155,7 @@ class ReaderActivity : AppCompatActivity(), IReaderContract.IReaderView,
         launch(UI) {
             readerViewModel?.previousChapter().takeIf { it != false }?.run {
                 loadingbar.show()
-                if (readerViewModel?.downloadChapter(readerView.title) ?: false) loadingbar.hide()
+                if (readerViewModel?.downloadAndShow(readerView.title) ?: false) loadingbar.hide()
             }
         }
     }
@@ -203,7 +205,7 @@ class ReaderActivity : AppCompatActivity(), IReaderContract.IReaderView,
             if (isAvailable && loadingbar.isShown) {
                 launch(UI) {
                     loadingbar.show()
-                    if (readerViewModel?.downloadChapter(readerView.title) ?: false)
+                    if (readerViewModel?.downloadAndShow(readerView.title) ?: false)
                         loadingbar.hide()
                 }
             }
@@ -212,17 +214,17 @@ class ReaderActivity : AppCompatActivity(), IReaderContract.IReaderView,
 
     inner class CatalogItemClickListener : IClickEvent {
         fun onChapterClick(v: View) {
+            if (loadingbar.isShown) loadingbar.hide()
             launch(UI) {
-                if (loadingbar.isShown) loadingbar.hide()
                 val boolean = readerViewModel?.pageByCatalog(v.itemChapter.text.toString())
                 if (boolean ?: true) {
                     readerView.title = v.itemChapter.text.toString()
                     loadingbar.show()
-                    if (readerViewModel?.downloadChapter(readerView.title) ?: false)
+                    if (readerViewModel?.downloadAndShow(readerView.title) ?: false)
                         loadingbar.hide()
                 }
-                dialog?.dismiss()
             }
+            dialog?.dismiss()
         }
     }
 
