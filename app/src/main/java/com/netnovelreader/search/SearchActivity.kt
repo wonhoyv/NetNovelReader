@@ -140,11 +140,11 @@ class SearchActivity : AppCompatActivity(), ISearchContract.ISearchView {
         super.onDestroy()
         searchViewModel?.resultList?.removeOnListChangedCallback(arrayListChangeListener)
         searchViewModel = null
+        CatalogCache.clearCache()
     }
 
     override fun onBackPressed() {
         if (searchloadingbar.isShown) return
-        CatalogCache.clearCache()
         super.onBackPressed()
     }
 
@@ -273,7 +273,7 @@ class SearchActivity : AppCompatActivity(), ISearchContract.ISearchView {
             AlertDialog.Builder(this@SearchActivity).setTitle(getString(R.string.downloadAllBook))
                 .setPositiveButton(R.string.yes, listener)
                 .setNegativeButton(getString(R.string.no), listener)
-                .setNeutralButton(getString(R.string.cancel), listener)
+                .setNeutralButton(getString(R.string.cancel), null)
                 .create().show()
         }
 

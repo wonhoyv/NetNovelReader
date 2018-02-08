@@ -3,6 +3,7 @@ package com.netnovelreader.shelf
 import android.databinding.ObservableField
 import android.databinding.ObservableInt
 import android.graphics.BitmapFactory
+import com.netnovelreader.ReaderApplication.Companion.threadPool
 import com.netnovelreader.common.*
 import com.netnovelreader.common.data.SQLHelper
 import com.netnovelreader.common.download.DownloadCatalog
@@ -19,7 +20,6 @@ import java.util.*
 class ShelfViewModel : IShelfContract.IShelfViewModel {
 
     var bookList = ObservableSyncArrayList<BookBean>()
-    var poolContext = newFixedThreadPoolContext(THREAD_NUM, "DownloadService")
 
     //检查书籍是否有更新
     override fun updateBooks() {
@@ -83,7 +83,7 @@ class ShelfViewModel : IShelfContract.IShelfViewModel {
 
     //更新目录
     private fun updateCatalog(bookBean: BookBean, must: Boolean) =
-        async(poolContext) {
+        launch(threadPool) {
             val tableName = id2TableName(bookBean.bookid.get())
             if (must || SQLHelper.getChapterCount(tableName) == 0) {
                 try {
@@ -92,11 +92,10 @@ class ShelfViewModel : IShelfContract.IShelfViewModel {
                     e.printStackTrace()
                 }
             }
-            1
         }
 
     //书架将要显示的书籍封面图片
-    private fun getBitmap(bookId: Int) = async(poolContext) {
+    private fun getBitmap(bookId: Int) = async(threadPool) {
         File("${getSavePath()}/${id2TableName(bookId)}", IMAGENAME)
             .takeIf { it.exists() }
             ?.let { BitmapFactory.decodeFile(it.path) } ?: getDefaultCover()

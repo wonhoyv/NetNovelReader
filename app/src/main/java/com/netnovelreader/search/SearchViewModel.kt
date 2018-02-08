@@ -98,13 +98,19 @@ class SearchViewModel : ISearchContract.ISearchViewModel {
             )
         }
         if (searchCode == reqCode && result[1].isNotEmpty()) { //result[1]==bookname,result[0]==catalogurl
-            launch { CatalogCache.addCatalog(result[1], result[0]) }.join()
+            CatalogCache.addCatalog(result[1], result[0])
             val bean = CatalogCache.cache[result[0]]
             if (bean != null && !bean.url.get().isNullOrEmpty()) {
                 resultList.add(bean)
             }
+            launch {
+                try{
+                    downloadImage(result[1], result[2])           //下载书籍封面图片
+                }catch (e: IOException){
+                    e.printStackTrace()
+                }
+            }
         }
-        launch { downloadImage(result[1], result[2]) }                 //下载书籍封面图片
     }
 
     @Throws(IOException::class)

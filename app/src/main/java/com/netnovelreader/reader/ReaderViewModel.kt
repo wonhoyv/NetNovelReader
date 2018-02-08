@@ -115,7 +115,7 @@ class ReaderViewModel(private val bookName: String, private val CACHE_NUM: Int) 
     override suspend fun updateCatalog(): ObservableArrayList<ReaderBean.Catalog> = async {
         catalog.clear()
         val catalogCursor = SQLHelper.getDB().rawQuery(
-            "select ${SQLHelper.CHAPTERNAME} " + "from $tableName", null
+            "select ${SQLHelper.CHAPTERNAME} from $tableName order by ${SQLHelper.ID} asc", null
         )
         while (catalogCursor.moveToNext()) {
             catalog.add(ReaderBean.Catalog(catalogCursor.getString(0)))

@@ -19,7 +19,7 @@ class ReaderApplication : Application() {
         appContext = applicationContext
         Logger.addLogAdapter(AndroidLogAdapter()) //日志调试工具全局初始化操作
         LeakCanary.install(this)                  //内存泄漏检测框架LeakCanary全局初始化操作
-        threadPool = newFixedThreadPoolContext(THREAD_NUM, "DownloadService")
+        threadPool = newFixedThreadPoolContext(THREAD_NUM, "appPoolContext")
     }
 
     companion object {
