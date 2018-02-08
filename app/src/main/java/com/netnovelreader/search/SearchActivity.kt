@@ -41,6 +41,7 @@ class SearchActivity : AppCompatActivity(), ISearchContract.ISearchView {
     var searchViewModel: SearchViewModel? = null
     private lateinit var arrayListChangeListener: ArrayListChangeListener<SearchBean>
     private lateinit var suggestArrayListChangeListener: ArrayListChangeListener<KeywordsBean>
+    private var job: Job? = null
     private var mSearchHotWord: SearchHotWord? = null              //搜索热词数组
     private val colorArray = arrayOf(                              //搜索热词标签的背景颜色列表
         R.color.hot_label_bg1,
@@ -141,6 +142,7 @@ class SearchActivity : AppCompatActivity(), ISearchContract.ISearchView {
         searchViewModel?.resultList?.removeOnListChangedCallback(arrayListChangeListener)
         searchViewModel = null
         CatalogCache.clearCache()
+        job?.cancel()
     }
 
     override fun onBackPressed() {
@@ -162,7 +164,6 @@ class SearchActivity : AppCompatActivity(), ISearchContract.ISearchView {
     inner class QueryListener : android.support.v7.widget.SearchView.OnQueryTextListener {
         private var tmp = ""
         private var tmpTime = System.currentTimeMillis()
-        private var job: Job? = null
 
         override fun onQueryTextSubmit(query: String): Boolean {
             searchloadingbar.hide()

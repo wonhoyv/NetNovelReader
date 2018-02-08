@@ -197,7 +197,6 @@ class ShelfActivity : AppCompatActivity(), IShelfContract.IShelfView {
                         shelfViewModel?.refreshBookList()
                     }
                 }
-                dialog.dismiss()
             }
             AlertDialog.Builder(this@ShelfActivity)
                     .setTitle(getString(R.string.deleteBook).replace("book", view.nameView.text.toString()))

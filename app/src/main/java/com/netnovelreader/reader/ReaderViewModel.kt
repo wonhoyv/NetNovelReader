@@ -9,6 +9,7 @@ import com.netnovelreader.common.getSavePath
 import com.netnovelreader.common.id2TableName
 import kotlinx.coroutines.experimental.async
 import kotlinx.coroutines.experimental.delay
+import kotlinx.coroutines.experimental.launch
 import java.io.File
 
 /**
@@ -17,6 +18,13 @@ import java.io.File
 
 class ReaderViewModel(private val bookName: String, private val CACHE_NUM: Int) :
     IReaderContract.IReaderViewModel {
+
+    enum class CHAPTERCHANGE {
+        NEXT,                       //下一章
+        PREVIOUS,                   //上一章
+        BY_CATALOG                  //通过目录翻页
+    }
+
     var catalog = ObservableArrayList<ReaderBean.Catalog>()
     /**
      * 一页显示的内容
@@ -54,33 +62,15 @@ class ReaderViewModel(private val bookName: String, private val CACHE_NUM: Int) 
             .let { it[1] }
     }.await()
 
-    /**
-     * 获取下一章内容，返回章节名称
-     */
-    override suspend fun nextChapter(): Boolean = async {
-        if (chapterNum >= maxChapterNum) return@async false
-        setRecord(chapterNum, 1)
-        chapterCache.getChapter(++chapterNum)
-            .apply { text.set(this) }
-            .let { it.substring(it.indexOf("|") + 1) } == ChapterCache.FILENOTFOUND
-    }.await()
-
-    override suspend fun previousChapter(): Boolean = async {
-        if (chapterNum < 2) return@async false
-        setRecord(chapterNum, 1)
-        chapterCache.getChapter(--chapterNum)
-            .apply { text.set(this) }
-            .let { it.substring(it.indexOf("|") + 1) } == ChapterCache.FILENOTFOUND
-    }.await()
-
-    /**
-     * 翻页到目录中的某章
-     */
-    override suspend fun pageByCatalog(chapterName: String?): Boolean = async {
-        chapterName?.run {
-            chapterNum = SQLHelper.getChapterId(tableName, chapterName)
-            setRecord(chapterNum, 1)
+    override suspend fun getChapter(type: CHAPTERCHANGE, chapterName: String?): Boolean = async {
+        when (type) {
+            CHAPTERCHANGE.NEXT -> if (chapterNum >= maxChapterNum) return@async false else chapterNum++
+            CHAPTERCHANGE.PREVIOUS -> if (chapterNum < 2) return@async false else chapterNum--
+            CHAPTERCHANGE.BY_CATALOG -> chapterName?.run {
+                chapterNum = SQLHelper.getChapterId(tableName, chapterName)
+            }
         }
+        launch { setRecord(chapterNum, 1) }
         chapterCache.getChapter(chapterNum)
             .apply { text.set(this) }
             .let { it.substring(it.indexOf("|") + 1) } == ChapterCache.FILENOTFOUND
@@ -96,7 +86,8 @@ class ReaderViewModel(private val bookName: String, private val CACHE_NUM: Int) 
             )
             delay(500)
         }
-        !(str == ChapterCache.FILENOTFOUND || str.isEmpty()) && !(pageByCatalog(null))
+        !(str == ChapterCache.FILENOTFOUND || str.isEmpty())
+                && !(getChapter(CHAPTERCHANGE.BY_CATALOG, null))
     }.await()
 
     /**
