@@ -20,6 +20,7 @@ import com.netnovelreader.R
 import com.netnovelreader.api.ApiManager
 import com.netnovelreader.api.bean.KeywordsBean
 import com.netnovelreader.api.bean.SearchHotWord
+import com.netnovelreader.api.bean.SearchHotWordsBean
 import com.netnovelreader.common.*
 import com.netnovelreader.common.base.IClickEvent
 import com.netnovelreader.common.data.SQLHelper
@@ -29,8 +30,6 @@ import com.netnovelreader.common.download.DownloadChapter
 import com.netnovelreader.databinding.ActivitySearchBinding
 import com.netnovelreader.noveldetail.NovelDetailActivity
 import com.netnovelreader.service.DownloadService
-import io.reactivex.android.schedulers.AndroidSchedulers
-import io.reactivex.schedulers.Schedulers
 import kotlinx.android.synthetic.main.activity_search.*
 import kotlinx.android.synthetic.main.item_search.view.*
 import kotlinx.coroutines.experimental.Job
@@ -78,22 +77,9 @@ class SearchActivity : AppCompatActivity(), ISearchContract.ISearchView {
      * 请求搜索热词数据
      */
     private fun requestHotWords() {
-        ApiManager.mAPI!!.hotWords()
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribeOn(Schedulers.io())
-                .subscribe {
-                    mSearchHotWord = it
-                    for (i in 0 until linearLayout.childCount) {
-                        val tvHotWordLabel = linearLayout.getChildAt(i) as TextView
-                        tvHotWordLabel.text = it.searchHotWords!![Random().nextInt(100)].word
-                        (tvHotWordLabel.background as GradientDrawable).setColor(
-                                ContextCompat.getColor(
-                                        this@SearchActivity,
-                                        colorArray[Random().nextInt(17)]
-                                )
-                        )
-                    }
-                }
+        ApiManager.mAPI!!.hotWords().enqueueCall {
+            it?.body()?.also { mSearchHotWord = it }?.searchHotWords?.apply { refreshHotWords(this) }
+        }
     }
 
     override fun setViewModel(vm: SearchViewModel) {
@@ -123,7 +109,7 @@ class SearchActivity : AppCompatActivity(), ISearchContract.ISearchView {
 
         searchSuggestRecycler.layoutManager = LinearLayoutManager(this)
         val adapter = BindingAdapter(
-                searchViewModel?.searchSuggestResultList,
+                searchViewModel?.suggestList,
                 R.layout.item_search_suggest,
                 SuggestSearchItemClickEvent()
         )
@@ -132,7 +118,7 @@ class SearchActivity : AppCompatActivity(), ISearchContract.ISearchView {
         searchSuggestRecycler.itemAnimator = DefaultItemAnimator()
         searchSuggestRecycler.addItemDecoration(NovelItemDecoration(this))
         suggestArrayListChangeListener = ArrayListChangeListener(adapter)
-        searchViewModel?.searchSuggestResultList?.addOnListChangedCallback(
+        searchViewModel?.suggestList?.addOnListChangedCallback(
                 suggestArrayListChangeListener
         )
 
@@ -142,6 +128,7 @@ class SearchActivity : AppCompatActivity(), ISearchContract.ISearchView {
     override fun onDestroy() {
         super.onDestroy()
         searchViewModel?.resultList?.removeOnListChangedCallback(arrayListChangeListener)
+        searchViewModel?.suggestList?.removeOnListChangedCallback(suggestArrayListChangeListener)
         searchViewModel = null
         CatalogCache.clearCache()
         job?.cancel()
@@ -214,6 +201,18 @@ class SearchActivity : AppCompatActivity(), ISearchContract.ISearchView {
         linearLayout.visibility = View.GONE
     }
 
+    fun refreshHotWords(list: List<SearchHotWordsBean>?) {
+        val li = list?.shuffled() ?: run { hideHotWords(); return }
+        for (i in 0 until linearLayout.childCount)
+            with(linearLayout.getChildAt(i) as TextView) {
+                //设置搜索热词文本，该10个热词是从100个关键个搜索热词中随机抽取的
+                text = li[i].word
+                (background as GradientDrawable).setColor(
+                        ContextCompat.getColor(context, colorArray[Random().nextInt(17)])
+                )
+            }
+    }
+
     //backbutton点击事件
     inner class BackClickEvent : IClickEvent {
         fun onClick(v: View) {
@@ -222,14 +221,7 @@ class SearchActivity : AppCompatActivity(), ISearchContract.ISearchView {
 
         //换一批热门搜索词
         fun refreshHotWords(v: View) {
-            for (i in 0 until linearLayout.childCount)
-                with(linearLayout.getChildAt(i) as TextView) {
-                    //设置搜索热词文本，该10个热词是从100个关键个搜索热词中随机抽取的
-                    text = mSearchHotWord?.searchHotWords!![Random().nextInt(100)].word
-                    (background as GradientDrawable).setColor(
-                            ContextCompat.getColor(context, colorArray[Random().nextInt(17)])
-                    )
-                }
+            refreshHotWords(mSearchHotWord?.searchHotWords)
         }
 
         //将搜索热词填充到searchView上但是不触发网络请求
@@ -284,7 +276,7 @@ class SearchActivity : AppCompatActivity(), ISearchContract.ISearchView {
             val container = v.parent as View      //获取下载按钮的父元素 即ItemView
             if (searchloadingbar.isShown) return
 
-            val listener = DialogInterface.OnClickListener { dialog, which ->
+            val listener = DialogInterface.OnClickListener { _, which ->
                 launch(UI) {
                     val catalogUrl = container.resultUrl.text.toString()
                     val bookname = container.resultName.text.toString()
