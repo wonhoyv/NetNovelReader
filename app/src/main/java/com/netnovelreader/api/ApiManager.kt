@@ -1,7 +1,6 @@
 package com.netnovelreader.api
 
 import com.netnovelreader.api.bean.*
-import io.reactivex.Observable
 import okhttp3.ResponseBody
 import retrofit2.Call
 import retrofit2.Retrofit
@@ -51,24 +50,22 @@ interface ZhuiShuShenQiAPI {
 
 
         @GET("http://api.zhuishushenqi.com/book/{id}")
-        fun getNovelIntroduce(@Path("id") id: String?): Observable<NovelIntroduce>
+        fun getNovelIntroduce(@Path("id") id: String?): Call<NovelIntroduce>
 
         /**
          * 作用：根据搜索书名返回书籍列表
          */
         @GET("http://api.zhuishushenqi.com/book/fuzzy-search?")
-        fun searchBook(@Query("query") query: String): Observable<QueryNovel>
+        fun searchBook(@Query("query") query: String): Call<QueryNovel>
 
         /**
          * 作用：根据准确已有的作者名字返回该作者名下的所有书籍
          */
         @GET("http://api.zhuishushenqi.com/book/accurate-search?")
-        fun searchBookByAuthor(@Query("author") author: String): Observable<QueryNovelByAuthor>
+        fun searchBookByAuthor(@Query("author") author: String): Call<QueryNovelByAuthor>
 
 
         @GET
         fun getPicture(@Url url: String): Call<ResponseBody>
 
-
-    }
 }

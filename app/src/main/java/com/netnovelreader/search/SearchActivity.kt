@@ -78,7 +78,7 @@ class SearchActivity : AppCompatActivity(), ISearchContract.ISearchView {
      */
     private fun requestHotWords() {
         ApiManager.mAPI!!.hotWords().enqueueCall {
-            it?.body()?.also { mSearchHotWord = it }?.searchHotWords?.apply { refreshHotWords(this) }
+            it?.also { mSearchHotWord = it }?.searchHotWords?.apply { refreshHotWords(this) }
         }
     }
 
@@ -247,27 +247,24 @@ class SearchActivity : AppCompatActivity(), ISearchContract.ISearchView {
         fun onClickDetail(v: View) {
 
             val itemText = v.findViewById<TextView>(R.id.resultName).text.toString()
-            ApiManager.mAPI!!.searchBook(itemText)
-                    .flatMap {
-                        val id = it.books?.firstOrNull { it.title == itemText }?._id
-                        ApiManager.mAPI?.getNovelIntroduce(id ?: "")
-                    }
-                    .observeOn(AndroidSchedulers.mainThread())
-                    .subscribeOn(Schedulers.io())
-                    .subscribe {
-                        when (it._id) {
-                            null -> {
+            ApiManager.mAPI!!.searchBook(itemText).enqueueCall {
+                val id = it?.books?.firstOrNull() { it.title == itemText }?._id
+                ApiManager.mAPI?.getNovelIntroduce(id ?: "")?.enqueueCall {
+                    when (it?._id) {
+                        null -> {
+                            launch(UI) {
                                 Snackbar.make(searchRoot, "没有搜索到相关小说的介绍", Snackbar.LENGTH_SHORT).show()
                             }
-                            else -> {
-                                val intent = Intent(this@SearchActivity, NovelDetailActivity::class.java)
-                                intent.putExtra("data", it)
-                                this@SearchActivity.startActivity(intent)
-                            }
                         }
-
+                        else -> {
+                            val intent =
+                                Intent(this@SearchActivity, NovelDetailActivity::class.java)
+                            intent.putExtra("data", it)
+                            this@SearchActivity.startActivity(intent)
+                        }
                     }
-
+                }
+            }
         }
 
         //搜索列表item下载事件

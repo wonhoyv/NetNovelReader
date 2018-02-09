@@ -5,13 +5,12 @@ import android.graphics.Bitmap
 import android.graphics.Color
 import android.os.Environment
 import android.widget.Toast
-import kotlinx.coroutines.experimental.async
+import kotlinx.coroutines.experimental.android.UI
 import kotlinx.coroutines.experimental.launch
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
 import java.util.regex.Pattern
-import kotlin.coroutines.experimental.CoroutineContext
 
 /**
  * Created by yangbo on 17-12-11.
@@ -71,18 +70,18 @@ fun getDefaultCover(): Bitmap = Bitmap.createBitmap(
     45, 60, Bitmap.Config.RGB_565
 )
 
-fun Context.toast(message: String) {
-    Toast.makeText(this, message, Toast.LENGTH_LONG).show()
+fun Context.toast(message: String) = launch(UI) {
+    Toast.makeText(this@toast, message, Toast.LENGTH_LONG).show()
 }
 
-inline fun <T> Call<T>.enqueueCall(crossinline block: (response: Response<T>?) -> Unit){
+inline fun <T> Call<T>.enqueueCall(crossinline block: (t: T?) -> Unit) {
     this.enqueue(object : Callback<T> {
         override fun onFailure(call: Call<T>?, t: Throwable?) {
             block(null)
         }
 
         override fun onResponse(call: Call<T>?, response: Response<T>?) {
-            block(response)
+            block(response?.body())
         }
     })
 }

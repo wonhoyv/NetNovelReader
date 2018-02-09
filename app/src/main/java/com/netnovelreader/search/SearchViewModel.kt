@@ -3,7 +3,6 @@ package com.netnovelreader.search
 import android.databinding.ObservableArrayList
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
-import android.util.Log
 import com.netnovelreader.ReaderApplication.Companion.threadPool
 import com.netnovelreader.api.ApiManager
 import com.netnovelreader.api.bean.KeywordsBean
@@ -14,7 +13,6 @@ import com.netnovelreader.common.download.CatalogCache
 import com.netnovelreader.common.enqueueCall
 import com.netnovelreader.common.getSavePath
 import com.netnovelreader.common.id2TableName
-import com.orhanobut.logger.Logger
 import kotlinx.coroutines.experimental.async
 import kotlinx.coroutines.experimental.launch
 import kotlinx.coroutines.experimental.runBlocking
@@ -39,7 +37,7 @@ class SearchViewModel : ISearchContract.ISearchViewModel {
     fun searchBookSuggest(queryText: String) = runBlocking {
         ApiManager.mAPI!!.searchSuggest(queryText, "com.ushaqi.zhuishushenqi").enqueueCall {
             suggestList.clear()
-            it?.body()?.keywords?.toHashSet()?.toList()?.apply { suggestList.addAll(this) }
+            it?.keywords?.toHashSet()?.toList()?.apply { suggestList.addAll(this) }
         }
     }
 
@@ -120,7 +118,7 @@ class SearchViewModel : ISearchContract.ISearchViewModel {
         if (imageUrl != "" && !File(path).exists()) {
             //  Logger.i("步骤2.从网站下载图书【$bookname】的图片,URL为【$imageUrl】")
             ApiManager.mAPI?.getPicture(imageUrl)?.enqueueCall {
-                val inputStream = it?.body()?.byteStream()
+                val inputStream = it?.byteStream()
                 val outputStream = FileOutputStream(path)
                 BitmapFactory.decodeStream(inputStream).compress(Bitmap.CompressFormat.PNG, 100, outputStream)
                 outputStream.flush()
