@@ -1,9 +1,6 @@
 package com.netnovelreader.api
 
-import com.netnovelreader.api.bean.NovelIntroduce
-import com.netnovelreader.api.bean.QueryNovel
-import com.netnovelreader.api.bean.QuerySuggest
-import com.netnovelreader.api.bean.SearchHotWord
+import com.netnovelreader.api.bean.*
 import io.reactivex.Observable
 import retrofit2.Retrofit
 import retrofit2.adapter.rxjava2.RxJava2CallAdapterFactory
@@ -61,6 +58,12 @@ interface ZhuiShuShenQiAPI {
      */
     @GET("http://api.zhuishushenqi.com/book/fuzzy-search?")
     fun searchBook(@Query("query") query: String): Observable<QueryNovel>
+
+    /**
+     * 作用：根据准确已有的作者名字返回该作者名下的所有书籍
+     */
+    @GET("http://api.zhuishushenqi.com/book/accurate-search?")
+    fun searchBookByAuthor(@Query("author") author: String): Observable<QueryNovelByAuthor>
 }
 
 

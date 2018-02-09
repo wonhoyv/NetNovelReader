@@ -45,7 +45,6 @@ class SearchActivity : AppCompatActivity(), ISearchContract.ISearchView {
     private lateinit var suggestArrayListChangeListener: ArrayListChangeListener<KeywordsBean>
     private var job: Job? = null
     private var mSearchHotWord: SearchHotWord? = null              //搜索热词数组
-    private var mLastCommitQueryString: String? = null
     private val colorArray = arrayOf(                              //搜索热词标签的背景颜色列表
             R.color.hot_label_bg1,
             R.color.hot_label_bg2,
@@ -180,7 +179,6 @@ class SearchActivity : AppCompatActivity(), ISearchContract.ISearchView {
                 tmpTime = System.currentTimeMillis()
                 searchViewBar.clearFocus()                    //提交搜索commit后收起键盘
                 searchSuggestRecycler.visibility = View.GONE
-                mLastCommitQueryString = query
             }
             return true
         }
@@ -257,7 +255,7 @@ class SearchActivity : AppCompatActivity(), ISearchContract.ISearchView {
         fun onClickDetail(v: View) {
 
             val itemText = v.findViewById<TextView>(R.id.resultName).text.toString()
-            ApiManager.mAPI!!.searchBook(mLastCommitQueryString!!)
+            ApiManager.mAPI!!.searchBook(itemText)
                     .flatMap {
                         val id = it.books?.firstOrNull { it.title == itemText }?._id
                         ApiManager.mAPI?.getNovelIntroduce(id ?: "")
