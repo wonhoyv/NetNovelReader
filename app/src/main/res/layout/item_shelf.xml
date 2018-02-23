@@ -7,11 +7,11 @@
 
         <variable
             name="itemDetail"
-            type="com.netnovelreader.shelf.BookBean" />
+            type="com.netnovelreader.bean.BookBean" />
 
         <variable
             name="clickEvent"
-            type="com.netnovelreader.shelf.ShelfActivity.ShelfClickEvent" />
+            type="com.netnovelreader.ui.ShelfActivity.ShelfClickEvent" />
     </data>
 
     <android.support.v7.widget.CardView
@@ -29,7 +29,7 @@
             android:onClick="@{clickEvent::itemOnClick}"
             android:onLongClick="@{clickEvent::itemOnLongClick}">
 
-            <com.netnovelreader.shelf.BookCoverImage
+            <com.netnovelreader.customview.BookCoverImage
                 android:id="@+id/bookCover"
                 android:layout_width="45dp"
                 android:layout_height="60dp"

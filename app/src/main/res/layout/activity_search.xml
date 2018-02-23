@@ -7,7 +7,7 @@
 
         <variable
             name="clickEvent"
-            type="com.netnovelreader.search.SearchActivity.BackClickEvent" />
+            type="com.netnovelreader.ui.SearchActivity.BackClickEvent" />
     </data>
 
     <android.support.constraint.ConstraintLayout
@@ -90,7 +90,7 @@
             app:layout_constraintBaseline_toBaselineOf="@+id/tvSearchLabel"
             app:layout_constraintEnd_toEndOf="parent" />
 
-        <com.netnovelreader.view.FlowLayout
+        <com.netnovelreader.customview.FlowLayout
             android:id="@+id/linearLayout"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -149,7 +149,7 @@
                 tool:text="搜索热词9" />
 
 
-        </com.netnovelreader.view.FlowLayout>
+        </com.netnovelreader.customview.FlowLayout>
 
 
         <FrameLayout

@@ -7,20 +7,20 @@
 
         <variable
             name="clickEvent"
-            type="com.netnovelreader.reader.ReaderActivity.ReaderClickEvent" />
+            type="com.netnovelreader.ui.ReaderActivity.ReaderClickEvent" />
 
         <variable
             name="readerViewModel"
-            type="com.netnovelreader.reader.ReaderViewModel" />
+            type="com.netnovelreader.viewmodel.ReaderViewModel" />
     </data>
 
     <android.support.constraint.ConstraintLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        tools:context="com.netnovelreader.reader.ReaderActivity">
+        tools:context="com.netnovelreader.ui.ReaderActivity">
 
         <!--正文-->
-        <com.netnovelreader.reader.ReaderView
+        <com.netnovelreader.customview.ReaderView
             android:id="@+id/readerView"
             android:layout_width="match_parent"
             android:layout_height="match_parent"

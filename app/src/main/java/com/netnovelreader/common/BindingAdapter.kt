@@ -8,7 +8,7 @@ import android.view.LayoutInflater
 import android.view.ViewGroup
 
 import com.netnovelreader.BR
-import com.netnovelreader.common.base.IClickEvent
+import com.netnovelreader.interfaces.IClickEvent
 
 /**
  * Created by yangbo on 18-1-12.

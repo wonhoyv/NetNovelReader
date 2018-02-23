@@ -5,11 +5,11 @@
 
         <variable
             name="itemDetail"
-            type="com.netnovelreader.reader.ReaderBean.Catalog" />
+            type="com.netnovelreader.bean.ReaderBean" />
 
         <variable
             name="clickEvent"
-            type="com.netnovelreader.reader.ReaderActivity.CatalogItemClickListener" />
+            type="com.netnovelreader.ui.ReaderActivity.CatalogItemClickListener" />
     </data>
 
     <LinearLayout

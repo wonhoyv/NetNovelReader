@@ -7,11 +7,11 @@
 
         <variable
             name="itemDetail"
-            type="com.netnovelreader.search.SearchBean" />
+            type="com.netnovelreader.bean.SearchBean" />
 
         <variable
             name="clickEvent"
-            type="com.netnovelreader.search.SearchActivity.SearchItemClickEvent" />
+            type="com.netnovelreader.ui.SearchActivity.SearchItemClickEvent" />
     </data>
 
     <android.support.constraint.ConstraintLayout

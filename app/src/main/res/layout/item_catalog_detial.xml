@@ -8,11 +8,11 @@
 
         <variable
             name="itemDetail"
-            type="com.netnovelreader.api.bean.NovelList.BooksBean" />
+            type="com.netnovelreader.bean.NovelList.BooksBean" />
 
         <variable
             name="clickEvent"
-            type="com.netnovelreader.novelCatagory.NovelListFragment.NovelListItemClickEvent" />
+            type="com.netnovelreader.ui.NovelListFragment.NovelListItemClickEvent" />
     </data>
 
     <android.support.constraint.ConstraintLayout
@@ -22,7 +22,7 @@
         android:layout_height="wrap_content"
         android:onClick="@{clickEvent::onClickDetail}">
 
-        <com.netnovelreader.shelf.BookCoverImage
+        <com.netnovelreader.customview.BookCoverImage
             android:id="@+id/imageView3"
             android:layout_width="55dp"
             android:layout_height="70dp"

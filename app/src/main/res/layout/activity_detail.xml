@@ -7,7 +7,7 @@
 
         <variable
             name="detail"
-            type="com.netnovelreader.api.bean.NovelIntroduce" />
+            type="com.netnovelreader.bean.NovelIntroduce" />
 
     </data>
 
@@ -43,7 +43,7 @@
 
             </android.support.design.widget.AppBarLayout>
 
-            <com.netnovelreader.shelf.BookCoverImage
+            <com.netnovelreader.customview.BookCoverImage
                 android:id="@+id/novelCover"
                 android:layout_width="60dp"
                 android:layout_height="80dp"

@@ -8,11 +8,11 @@
 
         <variable
             name="itemDetail"
-            type="com.netnovelreader.api.bean.NovelCatalog.Bean" />
+            type="com.netnovelreader.bean.NovelCatalog.Bean" />
 
         <variable
             name="clickEvent"
-            type="com.netnovelreader.novelCatagory.CatalogGridActivity.CatalogItemClick" />
+            type="com.netnovelreader.ui.CatalogGridActivity.CatalogItemClick" />
     </data>
 
     <android.support.constraint.ConstraintLayout

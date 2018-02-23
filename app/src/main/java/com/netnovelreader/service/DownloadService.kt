@@ -6,9 +6,9 @@ import android.content.Intent
 import android.support.v4.app.NotificationCompat
 import com.netnovelreader.R
 import com.netnovelreader.ReaderApplication.Companion.threadPool
-import com.netnovelreader.common.data.SQLHelper
-import com.netnovelreader.common.download.DownloadTask
 import com.netnovelreader.common.toast
+import com.netnovelreader.data.db.ReaderDbManager
+import com.netnovelreader.data.network.DownloadTask
 import kotlinx.coroutines.experimental.launch
 import java.io.IOException
 import java.util.concurrent.LinkedBlockingQueue
@@ -75,7 +75,7 @@ class DownloadService : IntentService {
         if (failed.get() > 0) {
             toast(getString(R.string.downloadfailed).replace("nn", "$failed"))
         }
-        SQLHelper.closeDB()
+        ReaderDbManager.closeDB()
     }
 
     private fun openNotification() {
