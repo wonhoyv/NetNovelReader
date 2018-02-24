@@ -4,7 +4,6 @@ import android.content.Intent
 import android.databinding.ObservableArrayList
 import android.os.Bundle
 import android.support.v4.app.Fragment
-import android.support.v7.widget.DefaultItemAnimator
 import android.support.v7.widget.LinearLayoutManager
 import android.view.LayoutInflater
 import android.view.View
@@ -12,9 +11,9 @@ import android.view.ViewGroup
 import android.widget.TextView
 import com.netnovelreader.R
 import com.netnovelreader.bean.NovelList
-import com.netnovelreader.common.ArrayListChangeListener
-import com.netnovelreader.common.BindingAdapter
+import com.netnovelreader.common.RecyclerAdapter
 import com.netnovelreader.common.enqueueCall
+import com.netnovelreader.common.init
 import com.netnovelreader.data.network.ApiManager
 import com.netnovelreader.interfaces.IClickEvent
 import kotlinx.android.synthetic.main.fragment_novel_list.*
@@ -26,8 +25,6 @@ import kotlinx.android.synthetic.main.fragment_novel_list.*
  */
 class NovelListFragment : Fragment() {
 
-
-    private lateinit var listListener: ArrayListChangeListener<NovelList.BooksBean>
     private var bookList: ObservableArrayList<NovelList.BooksBean> = ObservableArrayList()
     private var type: String? = null
     private var major: String? = null
@@ -49,20 +46,13 @@ class NovelListFragment : Fragment() {
     }
 
     private fun initView() {
-
-        val adapter =
-            BindingAdapter(bookList, R.layout.item_catalog_detial, NovelListItemClickEvent())
-        listListener = ArrayListChangeListener(adapter)
-        bookList.addOnListChangedCallback(listListener)
-
-        novelList.layoutManager = LinearLayoutManager(context)
-        novelList.adapter = adapter
-        novelList.itemAnimator = DefaultItemAnimator()
+        novelList.init(RecyclerAdapter(bookList, R.layout.item_catalog_detial, NovelListItemClickEvent()),
+                LinearLayoutManager(context), null)
 
     }
 
     private fun initData() {
-        ApiManager.mAPI!!.seachBookListByTypeAndMajor(type = type, major = major).enqueueCall {
+        ApiManager.mAPI.seachBookListByTypeAndMajor(type = type, major = major).enqueueCall {
             it?.let {
                 bookList.clear()
                 bookList.addAll(it.books!!)
@@ -74,13 +64,12 @@ class NovelListFragment : Fragment() {
 
         fun onClickDetail(v: View) {
             val id = v.findViewById<TextView>(R.id.bookId).text.toString()
-            ApiManager.mAPI?.getNovelIntroduce(id)?.enqueueCall {
+            ApiManager.mAPI.getNovelIntroduce(id).enqueueCall {
                 val intent = Intent(context, NovelDetailActivity::class.java)
                 intent.putExtra("data", it)
                 context!!.startActivity(intent)
             }
         }
     }
-
 
 }

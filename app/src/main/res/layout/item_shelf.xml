@@ -29,7 +29,7 @@
             android:onClick="@{clickEvent::itemOnClick}"
             android:onLongClick="@{clickEvent::itemOnLongClick}">
 
-            <com.netnovelreader.customview.BookCoverImage
+            <ImageView
                 android:id="@+id/bookCover"
                 android:layout_width="45dp"
                 android:layout_height="60dp"
@@ -37,7 +37,7 @@
                 android:layout_marginBottom="10dp"
                 android:layout_marginStart="10dp"
                 android:layout_marginTop="10dp"
-                android:text="@{itemDetail.bitmap}"
+                android:src="@{itemDetail.bitmap}"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toTopOf="parent" />

@@ -2,7 +2,6 @@ package com.netnovelreader.interfaces
 
 import com.netnovelreader.bean.ReaderBean
 import com.netnovelreader.viewmodel.ReaderViewModel
-import kotlinx.coroutines.experimental.Deferred
 
 /**
  * Created by yangbo on 18-1-13.
@@ -13,14 +12,13 @@ interface IReaderContract {
     }
 
     interface IReaderViewModel : IViewModel<ReaderBean> {
-        suspend fun initData(): Int
+        suspend fun initData(bookName: String, CACHE_NUM: Int): Int
         suspend fun getChapter(
             type: ReaderViewModel.CHAPTERCHANGE,
             chapterName: String?
-        ): Deferred<Boolean>
-
+        )
+        suspend fun downloadAndShow()
         suspend fun getCatalog()
-        suspend fun downloadAndShow(): Deferred<Boolean>
         suspend fun setRecord(chapterNum: Int, pageNum: Int)
         suspend fun autoRemove()
     }

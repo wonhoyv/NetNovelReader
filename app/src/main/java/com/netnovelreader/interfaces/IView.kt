@@ -5,5 +5,5 @@ package com.netnovelreader.interfaces
  */
 interface IView<VM> {
     fun init()
-    fun setViewModel(vm: VM)
+    fun setViewModel()
 }

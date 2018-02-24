@@ -10,6 +10,7 @@ import kotlinx.coroutines.experimental.Job
 interface ISearchContract {
     interface ISearchView : IView<SearchViewModel>
     interface ISearchViewModel : IViewModel<SearchBean> {
+        suspend fun refreshHotWords()
         suspend fun addBookToShelf(bookname: String, url: String): String
         suspend fun searchBook(bookname: String?): Job
         suspend fun saveBookImage(tableName: String, bookname: String)

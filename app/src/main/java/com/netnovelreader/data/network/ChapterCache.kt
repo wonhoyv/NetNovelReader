@@ -29,7 +29,7 @@ class ChapterCache(private val cacheNum: Int, private val tableName: String) {
         this.dirName = dirName
     }
 
-    fun getChapter(chapterNum: Int): String {
+    fun getChapter(chapterNum: Int, enableDownload: Boolean = true): String {
         try {
             readToCache(chapterNum)
         } catch (e: IOException) {
@@ -39,7 +39,7 @@ class ChapterCache(private val cacheNum: Int, private val tableName: String) {
             chapterTxtTable.get(chapterNum) ?: " |"+FILENOTFOUND
         } else {
             try {
-                getText(chapterNum, true).apply {
+                getText(chapterNum, enableDownload).apply {
                     val str = this.substring(this.indexOf("|") + 1)
                     if (!str.isEmpty() && str != FILENOTFOUND) {
                         chapterTxtTable.put(chapterNum, this)
@@ -57,14 +57,14 @@ class ChapterCache(private val cacheNum: Int, private val tableName: String) {
      * @isCurrentChapter 是否为将要阅读的章节，如果不是，从网络下载，如果是，让主线程进行处理
      */
     @Throws(IOException::class)
-    private fun getText(chapterNum: Int, isCurrentChapter: Boolean): String {
+    private fun getText(chapterNum: Int, enableDownload: Boolean): String {
         val sb = StringBuilder()
         val chapterName = ReaderDbManager.getChapterName(dirName!!, chapterNum)
         sb.append(chapterName + "|")
         val chapterFile = File("${getSavePath()}/$dirName/$chapterName")
         sb.append(
             if (chapterFile.exists() && chapterFile.isFile) chapterFile.readText()
-            else if (isCurrentChapter) FILENOTFOUND
+            else if(!enableDownload) FILENOTFOUND
             else getFromNet("${getSavePath()}/$dirName", chapterName)
         )
         return sb.toString()
@@ -76,8 +76,7 @@ class ChapterCache(private val cacheNum: Int, private val tableName: String) {
     fun getFromNet(dir: String, chapterName: String): String {
         if (dir.isEmpty() || chapterName.isEmpty()) return FILENOTFOUND
         val download = DownloadChapter(
-            tableName, dir, chapterName,
-            ReaderDbManager.getChapterUrl(tableName, chapterName)
+            tableName, dir, chapterName, ReaderDbManager.getChapterUrl(tableName, chapterName)
         )
         return try {
             download.getChapterTxt().apply { download.download(this) }
@@ -95,11 +94,11 @@ class ChapterCache(private val cacheNum: Int, private val tableName: String) {
         chapterTxtTable.filter { it.key + 1 < chapterNum || it.key - cacheNum > chapterNum || it.value.length == 0 }
             .forEach { chapterTxtTable.remove(it.key) }
         if (chapterNum > 1 && !chapterTxtTable.contains(chapterNum - 1)) {
-            chapterTxtTable.put(chapterNum - 1, getText(chapterNum - 1, false))
+            chapterTxtTable.put(chapterNum - 1, getText(chapterNum - 1, true))
         }
         for (i in 1..cacheNum) {
             if (chapterNum + i <= maxChapterNum && !chapterTxtTable.contains(chapterNum + i)) {
-                chapterTxtTable.put(chapterNum + i, getText(chapterNum + i, false))
+                chapterTxtTable.put(chapterNum + i, getText(chapterNum + i, true))
             }
         }
     }

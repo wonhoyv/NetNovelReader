@@ -12,9 +12,9 @@ import android.view.*
 import android.widget.TextView
 import com.netnovelreader.R
 import com.netnovelreader.bean.FilterBean
-import com.netnovelreader.common.BindingAdapter
 import com.netnovelreader.common.CatalogPagerAdapter
 import com.netnovelreader.common.PreferenceManager
+import com.netnovelreader.common.RecyclerAdapter
 import com.netnovelreader.databinding.ActivityCatalogDetailBinding
 import com.netnovelreader.interfaces.IClickEvent
 import kotlinx.android.synthetic.main.activity_catalog_detail.*
@@ -28,7 +28,7 @@ import kotlinx.android.synthetic.main.activity_catalog_detail.*
 class NovelCatalogDetailActivity : AppCompatActivity() {
     private var dialog: AlertDialog? = null               //筛选小说用的Dialog
     private var filterList = ObservableArrayList<FilterBean>()
-    private var filterAdapter: BindingAdapter<FilterBean>? = null
+    private var filterAdapter: RecyclerAdapter<FilterBean>? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         PreferenceManager.getThemeId(this).also { setTheme(it) }
@@ -84,7 +84,7 @@ class NovelCatalogDetailActivity : AppCompatActivity() {
             filterView.layoutManager = LinearLayoutManager(this)
             filterView.itemAnimator = DefaultItemAnimator()
             filterAdapter =
-                    BindingAdapter(filterList, R.layout.item_filter, FilterNovelItemClickListener())
+                    RecyclerAdapter(filterList, R.layout.item_filter, FilterNovelItemClickListener())
             filterView.adapter = filterAdapter
             dialog = builder.setView(view).create()
             val dialogWindow = dialog!!.window

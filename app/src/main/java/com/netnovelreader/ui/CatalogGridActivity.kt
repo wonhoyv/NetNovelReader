@@ -6,7 +6,6 @@ import android.databinding.ObservableArrayList
 import android.graphics.Color
 import android.os.Bundle
 import android.support.v7.app.AppCompatActivity
-import android.support.v7.widget.DefaultItemAnimator
 import android.support.v7.widget.GridLayoutManager
 import android.support.v7.widget.RecyclerView.VERTICAL
 import android.view.MenuItem
@@ -26,9 +25,6 @@ import kotlinx.android.synthetic.main.activity_catalog_grid.*
  * 作者： YangJunQuan   2018-2-9.
  */
 class CatalogGridActivity : AppCompatActivity() {
-
-
-    private lateinit var arrayListChangeListener: ArrayListChangeListener<NovelCatalog.Bean>
     private var resultList: ObservableArrayList<NovelCatalog.Bean> = ObservableArrayList()
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -46,20 +42,11 @@ class CatalogGridActivity : AppCompatActivity() {
     }
 
     private fun initView() {
-        maleRecyclerView.layoutManager = GridLayoutManager(this, 3, VERTICAL, false)
-        val mAdapter =
-            BindingAdapter(resultList, R.layout.grid_item_novel_classfy, CatalogItemClick())
-        maleRecyclerView.adapter = mAdapter
-        maleRecyclerView.addItemDecoration(
-            GridDivider(
-                this,
-                1,
-                Color.BLACK
-            )
+        maleRecyclerView.init(
+                RecyclerAdapter(resultList, R.layout.grid_item_novel_classfy, CatalogItemClick()),
+                GridLayoutManager(this, 3, VERTICAL, false),
+                GridDivider(this,1,Color.BLACK)
         )
-        maleRecyclerView.itemAnimator = DefaultItemAnimator()
-        arrayListChangeListener = ArrayListChangeListener(mAdapter)
-        resultList.addOnListChangedCallback(arrayListChangeListener)
     }
 
     private fun initData() {

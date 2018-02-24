@@ -1,13 +1,19 @@
 package com.netnovelreader.viewmodel
 
+import android.app.Application
+import android.arch.lifecycle.AndroidViewModel
 import android.arch.lifecycle.MutableLiveData
-import android.arch.lifecycle.ViewModel
 import android.databinding.ObservableArrayList
+import android.databinding.ObservableField
+import android.databinding.ObservableInt
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.support.v4.content.ContextCompat
+import com.netnovelreader.R
 import com.netnovelreader.ReaderApplication.Companion.threadPool
 import com.netnovelreader.bean.KeywordsBean
 import com.netnovelreader.bean.SearchBean
+import com.netnovelreader.bean.SearchHotWordsBean
 import com.netnovelreader.common.IMAGENAME
 import com.netnovelreader.common.enqueueCall
 import com.netnovelreader.common.getSavePath
@@ -25,17 +31,63 @@ import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
 import java.net.URLEncoder
+import java.util.*
 
 /**
  * Created by yangbo on 18-1-14.
  */
-class SearchViewModel : ViewModel(), ISearchContract.ISearchViewModel {
+class SearchViewModel(val context: Application) : AndroidViewModel(context), ISearchContract.ISearchViewModel {
     @Volatile
     private var searchCode = 0
-    var resultList = MutableLiveData<ObservableArrayList<SearchBean>>()
-        .run { value = ObservableArrayList(); value!! }
-    var suggestList = MutableLiveData<ObservableArrayList<KeywordsBean>>()
-        .run { value = ObservableArrayList(); value!! }   //输入部分书名自动补全提示
+    val resultList by lazy {
+        MutableLiveData<ObservableArrayList<SearchBean>>().run { value = ObservableArrayList(); value!! }
+    }
+    val suggestList by lazy {
+        MutableLiveData<ObservableArrayList<KeywordsBean>>().run { value = ObservableArrayList(); value!! }   //输入部分书名自动补全提示
+    }
+    val searchHotWords = Array<ObservableField<String>>(10) { ObservableField("") } //显示的搜索热词
+    val colors = Array(10) { ObservableInt(R.color.hot_label_bg1) }   //搜索热词颜色
+
+    var hotWordsTemp: List<SearchHotWordsBean>? = null            //搜索热词
+
+    private val colorArray by lazy {
+        arrayOf(                              //搜索热词标签的背景颜色列表
+                R.color.hot_label_bg1,
+                R.color.hot_label_bg2,
+                R.color.hot_label_bg3,
+                R.color.hot_label_bg4,
+                R.color.hot_label_bg5,
+                R.color.hot_label_bg6,
+                R.color.hot_label_bg7,
+                R.color.hot_label_bg8,
+                R.color.hot_label_bg9,
+                R.color.hot_label_bg10,
+                R.color.hot_label_bg11,
+                R.color.hot_label_bg12,
+                R.color.hot_label_bg13,
+                R.color.hot_label_bg14,
+                R.color.hot_label_bg15,
+                R.color.hot_label_bg16,
+                R.color.hot_label_bg17
+        ).map { ContextCompat.getColor(context, it) }
+    }
+
+    override suspend fun refreshHotWords() {
+        if (hotWordsTemp == null) {
+            hotWordsTemp = try {
+                ApiManager.mAPI.hotWords().execute().body()?.searchHotWords
+            } catch (e: IOException) {
+                null
+            }
+        }
+        hotWordsTemp = hotWordsTemp?.shuffled() ?: return
+        for (i in 0 until (hotWordsTemp?.size ?: -1)) {
+            if (i > searchHotWords.size - 1) break
+            searchHotWords[i].set(hotWordsTemp?.get(i)?.word ?: "")
+
+            colors[i].set(colorArray[Random().nextInt(17)])
+        }
+    }
 
     /**
      * 在搜索框输入过程中匹配一些输入项并提示
@@ -73,46 +125,46 @@ class SearchViewModel : ViewModel(), ISearchContract.ISearchViewModel {
 
     override suspend fun saveBookImage(tableName: String, bookname: String) {
         File(getSavePath() + "/tmp")
-            .takeIf { it.exists() }
-            ?.listFiles { _, name -> name.startsWith(bookname) }
-            ?.firstOrNull()
-            ?.copyTo(File("${getSavePath()}/$tableName"
-                .apply { File(this).mkdirs() }, IMAGENAME
-            ), true
-            )
+                .takeIf { it.exists() }
+                ?.listFiles { _, name -> name.startsWith(bookname) }
+                ?.firstOrNull()
+                ?.copyTo(File("${getSavePath()}/$tableName"
+                        .apply { File(this).mkdirs() }, IMAGENAME
+                ), true
+                )
     }
 
     //删除目标及之后的章节,换源重新下载
     override suspend fun delChapterAfterSrc(tableName: String, chapterName: String) {
         val list = ReaderDbManager.delChapterAfterSrc(tableName, chapterName)
         File(getSavePath() + "/$tableName") //目录
-            .takeIf { it.exists() }             //是否存在
-            ?.let { list.map { item -> File(it, item) }.forEach { it.delete() } }
+                .takeIf { it.exists() }             //是否存在
+                ?.let { list.map { item -> File(it, item) }.forEach { it.delete() } }
     }
 
     //从具体网站搜索，并添加到resultList
     @Throws(IOException::class)
     private suspend fun searchBookFromSite(
-        bookname: String,
-        siteinfo: Array<String?>,
-        reqCode: Int
+            bookname: String,
+            siteinfo: Array<String?>,
+            reqCode: Int
     ) {
         val url = siteinfo[1]!!.replace(
-            ReaderSQLHelper.SEARCH_NAME,
-            URLEncoder.encode(bookname, siteinfo[7])
+                ReaderSQLHelper.SEARCH_NAME,
+                URLEncoder.encode(bookname, siteinfo[7])
         )
         val result = if (siteinfo[0].equals("0")) {    //是否重定向
             SearchBook().search(
-                url,
-                siteinfo[4] ?: "",
-                siteinfo[6] ?: "",
-                siteinfo[9] ?: ""
+                    url,
+                    siteinfo[4] ?: "",
+                    siteinfo[6] ?: "",
+                    siteinfo[9] ?: ""
             )
         } else {
             SearchBook().search(
-                url, siteinfo[2] ?: "", siteinfo[3] ?: "",
-                siteinfo[4] ?: "", siteinfo[5] ?: "",
-                siteinfo[6] ?: "", siteinfo[8] ?: "", siteinfo[9] ?: ""
+                    url, siteinfo[2] ?: "", siteinfo[3] ?: "",
+                    siteinfo[4] ?: "", siteinfo[5] ?: "",
+                    siteinfo[6] ?: "", siteinfo[8] ?: "", siteinfo[9] ?: ""
             )
         }
         if (searchCode == reqCode && result[1].isNotEmpty()) { //result[1]==bookname,result[0]==catalogurl
@@ -141,7 +193,7 @@ class SearchViewModel : ViewModel(), ISearchContract.ISearchViewModel {
                 val inputStream = it?.byteStream()
                 val outputStream = FileOutputStream(path)
                 BitmapFactory.decodeStream(inputStream)
-                    .compress(Bitmap.CompressFormat.PNG, 100, outputStream)
+                        .compress(Bitmap.CompressFormat.PNG, 100, outputStream)
                 outputStream.flush()
                 inputStream?.close()
                 outputStream.close()

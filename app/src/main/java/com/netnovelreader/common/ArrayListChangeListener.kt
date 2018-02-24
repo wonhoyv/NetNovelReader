@@ -8,7 +8,7 @@ import kotlinx.coroutines.experimental.launch
 /**
  * Created by yangbo on 2018/1/24.
  */
-class ArrayListChangeListener<T>(private val adapter: BindingAdapter<T>) :
+class ArrayListChangeListener<T>(private val adapter: RecyclerAdapter<T>) :
     ObservableList.OnListChangedCallback<ObservableArrayList<T>>() {
 
     override fun onChanged(p0: ObservableArrayList<T>?) {

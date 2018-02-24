@@ -16,13 +16,13 @@
     </data>
 
     <android.support.constraint.ConstraintLayout
-        android:layout_marginRight="16dp"
+        android:layout_marginStart="16dp"
         android:layout_marginEnd="16dp"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:onClick="@{clickEvent::onClickDetail}">
 
-        <com.netnovelreader.customview.BookCoverImage
+        <ImageView
             android:id="@+id/imageView3"
             android:layout_width="55dp"
             android:layout_height="70dp"
@@ -30,7 +30,7 @@
             android:layout_marginTop="12dp"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent"
-            app:url="@{itemDetail.cover}" />
+            android:src="@{itemDetail.cover}" />
 
         <TextView
             android:id="@+id/title"

@@ -16,19 +16,13 @@ import retrofit2.http.Url
  * 作者： YangJunQuan   2018/2/5.
  */
 object ApiManager {
-    var mAPI: ZhuiShuShenQiAPI? = null
-        get() {
-            if (null == field) {
-                synchronized(ZhuiShuShenQiAPI::class.java) {
-                    field = Retrofit.Builder()
-                        .baseUrl("http://api.zhuishushenqi.com")
-                        .addConverterFactory(GsonConverterFactory.create())
-                        .build()
-                        .create(ZhuiShuShenQiAPI::class.java)
-                }
-            }
-            return field!!
-        }
+    val mAPI by lazy {
+        Retrofit.Builder()
+                .baseUrl("http://api.zhuishushenqi.com")
+                .addConverterFactory(GsonConverterFactory.create())
+                .build()
+                .create(ZhuiShuShenQiAPI::class.java)
+    }
 }
 
 interface ZhuiShuShenQiAPI {
@@ -67,12 +61,12 @@ interface ZhuiShuShenQiAPI {
 
     @GET("http://api.zhuishushenqi.com/book/by-categories?")
     fun seachBookListByTypeAndMajor(
-        @Query("gender") gender: String? = "male",
-        @Query("type") type: String?,
-        @Query("major") major: String?,
-        @Query("minor") minor: String? = "",
-        @Query("start") start: String? = "0",
-        @Query("limit") limit: String? = "50"
+            @Query("gender") gender: String? = "male",
+            @Query("type") type: String?,
+            @Query("major") major: String?,
+            @Query("minor") minor: String? = "",
+            @Query("start") start: String? = "0",
+            @Query("limit") limit: String? = "50"
     ): Call<NovelList>
 
 

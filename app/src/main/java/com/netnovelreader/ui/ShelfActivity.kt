@@ -2,6 +2,8 @@ package com.netnovelreader.ui
 
 import android.app.AlertDialog
 import android.app.Dialog
+import android.arch.lifecycle.ViewModelProvider
+import android.arch.lifecycle.ViewModelProviders
 import android.content.DialogInterface
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -9,16 +11,14 @@ import android.databinding.DataBindingUtil
 import android.os.Bundle
 import android.support.v4.app.ActivityCompat
 import android.support.v7.app.AppCompatActivity
-import android.support.v7.widget.DefaultItemAnimator
 import android.support.v7.widget.LinearLayoutManager
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
 import com.netnovelreader.R
-import com.netnovelreader.bean.BookBean
-import com.netnovelreader.common.ArrayListChangeListener
-import com.netnovelreader.common.BindingAdapter
 import com.netnovelreader.common.PreferenceManager
+import com.netnovelreader.common.RecyclerAdapter
+import com.netnovelreader.common.init
 import com.netnovelreader.common.toast
 import com.netnovelreader.data.db.ReaderDbManager
 import com.netnovelreader.databinding.ActivityShelfBinding
@@ -33,7 +33,6 @@ import kotlinx.coroutines.experimental.launch
 class ShelfActivity : AppCompatActivity(), IShelfContract.IShelfView {
 
     var shelfViewModel: ShelfViewModel? = null
-    private var arrayListChangeListener: ArrayListChangeListener<BookBean>? = null
     private var hasPermission = false
     private var themeId = 0
     var job: Job? = null
@@ -41,7 +40,7 @@ class ShelfActivity : AppCompatActivity(), IShelfContract.IShelfView {
     override fun onCreate(savedInstanceState: Bundle?) {
         themeId = PreferenceManager.getThemeId(this).also { setTheme(it) }
         super.onCreate(savedInstanceState)
-        setViewModel(ShelfViewModel())
+        setViewModel()
         hasPermission = checkPermission(android.Manifest.permission.WRITE_EXTERNAL_STORAGE)
         if (!hasPermission) {
             requirePermission(android.Manifest.permission.WRITE_EXTERNAL_STORAGE, 1)
@@ -52,20 +51,19 @@ class ShelfActivity : AppCompatActivity(), IShelfContract.IShelfView {
     /**
      * DataBinding绑定
      */
-    override fun setViewModel(vm: ShelfViewModel) {
-        shelfViewModel = vm
+    override fun setViewModel() {
+        val factory = ViewModelProvider.AndroidViewModelFactory.getInstance(application)
+        shelfViewModel = ViewModelProviders.of(this,factory).get(ShelfViewModel::class.java)
         DataBindingUtil.setContentView<ActivityShelfBinding>(this, R.layout.activity_shelf)
     }
 
     override fun init() {
-        setSupportActionBar(shelfToolbar.apply { setTitle(R.string.shelf_activity_title) })
-        shelfRecycler.layoutManager = LinearLayoutManager(this)
-        shelfRecycler.itemAnimator = DefaultItemAnimator()
-        val mAdapter =
-            BindingAdapter(shelfViewModel?.bookList, R.layout.item_shelf, ShelfClickEvent())
-        shelfRecycler.adapter = mAdapter
-        arrayListChangeListener = ArrayListChangeListener(mAdapter)
-        shelfViewModel?.bookList?.addOnListChangedCallback(arrayListChangeListener)
+        setSupportActionBar(shelfToolbar)
+        shelfRecycler.init(
+                RecyclerAdapter(shelfViewModel?.bookList, R.layout.item_shelf, ShelfClickEvent()),
+                LinearLayoutManager(this),
+                null
+        )
         shelf_layout.setColorSchemeResources(R.color.gray)
         var time = System.currentTimeMillis()
         shelf_layout.setOnRefreshListener {
@@ -90,16 +88,13 @@ class ShelfActivity : AppCompatActivity(), IShelfContract.IShelfView {
 
     override fun onResume() {
         super.onResume()
-        shelfViewModel?.bookList?.clear()
         updateShelf()
     }
 
     override fun onDestroy() {
         super.onDestroy()
         job?.cancel()
-        shelfViewModel?.bookList?.removeOnListChangedCallback(arrayListChangeListener)
-        shelfViewModel?.bookList?.forEach { it.bitmap.get()?.recycle() }
-        shelfViewModel = null
+        (shelfRecycler.adapter as RecyclerAdapter<Any>).removeDataChangeListener()
         ReaderDbManager.closeDB()
     }
 

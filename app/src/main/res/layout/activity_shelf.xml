@@ -23,6 +23,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="?attr/actionBarSize"
                 android:background="?attr/colorPrimary"
+                app:title="@string/shelf_activity_title"
                 app:layout_scrollFlags="scroll"
                 app:popupTheme="@style/AppTheme.PopupOverlay" />
 

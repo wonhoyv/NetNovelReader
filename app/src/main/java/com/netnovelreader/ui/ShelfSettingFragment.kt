@@ -1,7 +1,6 @@
 package com.netnovelreader.ui
 
 import android.content.Intent
-import android.graphics.Color
 import android.os.Bundle
 import android.preference.PreferenceFragment
 import android.view.LayoutInflater
@@ -32,6 +31,5 @@ class ShelfSettingFragment : PreferenceFragment() {
         savedInstanceState: Bundle?
     ): View {
         return super.onCreateView(inflater, container, savedInstanceState)
-            .apply { this.setBackgroundColor(Color.WHITE) }
     }
 }

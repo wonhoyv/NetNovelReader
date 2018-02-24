@@ -14,11 +14,16 @@ import com.netnovelreader.interfaces.IClickEvent
  * Created by yangbo on 18-1-12.
  */
 
-class BindingAdapter<T>(
+class RecyclerAdapter<T>(
     private var itemDetails: ObservableArrayList<T>?,
     private val resId: Int,
     val clickEvent: IClickEvent?
-) : RecyclerView.Adapter<BindingAdapter.BindingViewHolder<T>>() {
+) : RecyclerView.Adapter<RecyclerAdapter.BindingViewHolder<T>>() {
+    lateinit var listener: ArrayListChangeListener<T>
+    init {
+        listener = ArrayListChangeListener(this)
+        itemDetails?.addOnListChangedCallback(listener)
+    }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): BindingViewHolder<T> {
         val binding = DataBindingUtil.inflate<ViewDataBinding>(
@@ -35,6 +40,10 @@ class BindingAdapter<T>(
     override fun getItemCount(): Int {
         itemDetails ?: return 0
         return itemDetails!!.size
+    }
+
+    public fun removeDataChangeListener(){
+        itemDetails?.removeOnListChangedCallback(listener)
     }
 
     class BindingViewHolder<T>(private val binding: ViewDataBinding) :

@@ -1,6 +1,8 @@
 package com.netnovelreader.ui
 
 import android.app.AlertDialog
+import android.arch.lifecycle.ViewModelProvider
+import android.arch.lifecycle.ViewModelProviders
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
@@ -29,7 +31,6 @@ import com.netnovelreader.viewmodel.ReaderViewModel
 import de.hdodenhof.circleimageview.CircleImageView
 import kotlinx.android.synthetic.main.activity_reader.*
 import kotlinx.android.synthetic.main.item_catalog.view.*
-import kotlinx.coroutines.experimental.Deferred
 import kotlinx.coroutines.experimental.android.UI
 import kotlinx.coroutines.experimental.launch
 
@@ -41,7 +42,6 @@ class ReaderActivity : AppCompatActivity(), IReaderContract.IReaderView,
     var readerViewModel: ReaderViewModel? = null
     var dialog: AlertDialog? = null
     var netStateReceiver: NetChangeReceiver? = null
-    var deferred: Deferred<Boolean>? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         if (PreferenceManager.isFullScreen(this)) {
@@ -52,17 +52,13 @@ class ReaderActivity : AppCompatActivity(), IReaderContract.IReaderView,
         }
         PreferenceManager.getThemeId(this).also { setTheme(it) }
         super.onCreate(savedInstanceState)
-        setViewModel(
-            ReaderViewModel(
-                intent.getStringExtra("bookname"),
-                PreferenceManager.getAutoDownNum(this)
-            )
-        )
+        setViewModel()
         init()
     }
 
-    override fun setViewModel(vm: ReaderViewModel) {
-        readerViewModel = vm
+    override fun setViewModel() {
+        val factory = ViewModelProvider.AndroidViewModelFactory.getInstance(application)
+        readerViewModel = ViewModelProviders.of(this,factory).get(ReaderViewModel::class.java)
         val binding =
             DataBindingUtil.setContentView<ActivityReaderBinding>(this, R.layout.activity_reader)
         binding.clickEvent = ReaderClickEvent()
@@ -75,7 +71,6 @@ class ReaderActivity : AppCompatActivity(), IReaderContract.IReaderView,
     }
 
     override fun init() {
-        loadingbar.hide()
         netStateReceiver = NetChangeReceiver()
         val filter = IntentFilter().apply { addAction(ConnectivityManager.CONNECTIVITY_ACTION) }
         registerReceiver(netStateReceiver, filter)  //网络变化广播接收器
@@ -98,7 +93,6 @@ class ReaderActivity : AppCompatActivity(), IReaderContract.IReaderView,
 
     override fun onDestroy() {
         super.onDestroy()
-        deferred?.cancel()
         unregisterReceiver(netStateReceiver)
         if (PreferenceManager.isAutoRemove(this)) {
             launch { readerViewModel?.autoRemove() }
@@ -117,18 +111,10 @@ class ReaderActivity : AppCompatActivity(), IReaderContract.IReaderView,
      * readerview第一次绘制时调用
      */
     override fun doDrawPrepare() {
-        launch(UI) {
-            readerView.pageNum = readerViewModel?.initData()
-            readerViewModel?.getChapter(ReaderViewModel.CHAPTERCHANGE.BY_CATALOG, null)?.await()
-                .takeIf { it ?: true }
-                ?.apply {
-                    loadingbar.show()
-                    deferred = readerViewModel!!.downloadAndShow()
-                    (deferred!!.await() && !readerViewModel!!.getChapter(
-                        ReaderViewModel.CHAPTERCHANGE.BY_CATALOG, null
-                    ).await())
-                        .takeIf { it }?.run { loadingbar.hide() }
-                }
+        launch {
+            readerView.pageNum = readerViewModel?.initData(intent.getStringExtra("bookname"),
+                    PreferenceManager.getAutoDownNum(this@ReaderActivity))
+            readerViewModel?.getChapter(ReaderViewModel.CHAPTERCHANGE.BY_CATALOG, null)
         }
     }
 
@@ -140,39 +126,16 @@ class ReaderActivity : AppCompatActivity(), IReaderContract.IReaderView,
     }
 
     override fun nextChapter() {
-        if (loadingbar.isShown) loadingbar.hide()
         hideHeadFoot()
-        launch(UI) {
-            readerViewModel?.getChapter(ReaderViewModel.CHAPTERCHANGE.NEXT, null)?.await()
-                .takeIf { it ?: true }
-                ?.apply {
-                    loadingbar.show()
-                    deferred = readerViewModel!!.downloadAndShow()
-                    (deferred!!.await() && !readerViewModel!!.getChapter(
-                        ReaderViewModel.CHAPTERCHANGE.BY_CATALOG, null
-                    ).await())
-                        .takeIf { it }?.run { loadingbar.hide() }
-                }
-            readerViewModel?.setRecord(readerViewModel?.chapterNum ?: 1, readerView.pageNum ?: 1)
+        launch{
+            readerViewModel?.getChapter(ReaderViewModel.CHAPTERCHANGE.NEXT, null)
         }
     }
 
     override fun previousChapter() {
-        if (loadingbar.isShown) loadingbar.hide()
         hideHeadFoot()
-        launch(UI) {
-            readerViewModel?.getChapter(ReaderViewModel.CHAPTERCHANGE.PREVIOUS, null)?.await()
-                .takeIf { it != false }
-                ?.apply {
-                    loadingbar.show()
-                    deferred = readerViewModel!!.downloadAndShow()
-                    (deferred!!.await() && !readerViewModel!!.getChapter(
-                        ReaderViewModel.CHAPTERCHANGE.BY_CATALOG, null
-                    ).await())
-                        .takeIf { it }?.run { loadingbar.hide() }
-                }
-
-            readerViewModel?.setRecord(readerViewModel?.chapterNum ?: 1, readerView.pageNum ?: 1)
+        launch{
+            readerViewModel?.getChapter(ReaderViewModel.CHAPTERCHANGE.PREVIOUS, null)
         }
     }
 
@@ -193,7 +156,7 @@ class ReaderActivity : AppCompatActivity(), IReaderContract.IReaderView,
             catalogView.layoutManager = LinearLayoutManager(this)
             catalogView.addItemDecoration(NovelItemDecoration(this))
             catalogView.itemAnimator = DefaultItemAnimator()
-            catalogView.adapter = BindingAdapter(
+            catalogView.adapter = RecyclerAdapter(
                 readerViewModel?.catalog, R.layout.item_catalog,
                 CatalogItemClickListener()
             )
@@ -220,15 +183,9 @@ class ReaderActivity : AppCompatActivity(), IReaderContract.IReaderView,
         override fun onReceive(context: Context, intent: Intent) {
             val cm = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
             val isAvailable = cm.activeNetworkInfo?.isAvailable ?: false
-            if (isAvailable && loadingbar.isShown) {   //当网络变为连接状态，并且加载条显示时，下载章节内容
-                launch(UI) {
-                    loadingbar.show()
-                    deferred = readerViewModel!!.downloadAndShow()
-                    (deferred!!.await() && !readerViewModel!!.getChapter(
-                        ReaderViewModel.CHAPTERCHANGE.BY_CATALOG, null
-                    ).await())
-                        .takeIf { it }?.run { loadingbar.hide() }
-
+            if (isAvailable && readerViewModel?.isLoading?.get() != false) {   //当网络变为连接状态，并且加载条显示时，下载章节内容
+                launch {
+                    readerViewModel!!.downloadAndShow()
                     readerViewModel?.setRecord(
                         readerViewModel?.chapterNum ?: 1,
                         readerView.pageNum ?: 1
@@ -241,22 +198,16 @@ class ReaderActivity : AppCompatActivity(), IReaderContract.IReaderView,
     //点击目录，跳转章节
     inner class CatalogItemClickListener : IClickEvent {
         fun onChapterClick(v: View) {
-            if (loadingbar.isShown) loadingbar.hide()
             launch(UI) {
-                readerViewModel?.getChapter(
-                    ReaderViewModel.CHAPTERCHANGE.BY_CATALOG, v.itemChapter.text.toString()
-                )?.await().takeIf { it != false }?.apply {
-                    loadingbar.show()
-                    deferred = readerViewModel!!.downloadAndShow()
-                    (deferred!!.await() && !readerViewModel!!.getChapter(
-                        ReaderViewModel.CHAPTERCHANGE.BY_CATALOG, null
-                    ).await())
-                        .takeIf { it }?.run { loadingbar.hide() }
+                launch{
+                    readerViewModel?.getChapter(
+                            ReaderViewModel.CHAPTERCHANGE.BY_CATALOG, v.itemChapter.text.toString()
+                    )
+                    readerViewModel?.setRecord(
+                            readerViewModel?.chapterNum ?: 1,
+                            readerView.pageNum ?: 1
+                    )
                 }
-                readerViewModel?.setRecord(
-                    readerViewModel?.chapterNum ?: 1,
-                    readerView.pageNum ?: 1
-                )
             }
             dialog?.dismiss()
         }
