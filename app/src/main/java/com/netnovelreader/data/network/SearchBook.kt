@@ -10,7 +10,7 @@ import java.net.URL
 /**
  * Created by yangbo on 18-1-14.
  */
-class SearchBook : Cloneable {
+class SearchBook {
 
     /**
      * @url
@@ -32,7 +32,7 @@ class SearchBook : Cloneable {
         redirectName: String, noRedirectName: String, redirectImage: String, noRedirectImage: String
     )
             : Array<String> {
-        if (redirectFileld.equals("")) {
+        if (redirectFileld == "") {
             return search(url, noRedirectSelector, noRedirectName, noRedirectImage)
         }
         val redirect_url = redirectToCatalog(url, redirectFileld)
@@ -47,11 +47,10 @@ class SearchBook : Cloneable {
     fun search(url: String, catalogSelector: String, nameSelector: String, imageSelector: String)
             : Array<String> {
         val doc = Jsoup.connect(url).headers(getHeaders(url)).timeout(TIMEOUT).get()
-        val arr = arrayOf(
+        return arrayOf(
             parseCatalogUrl(doc, url, catalogSelector), parseBookname(doc, nameSelector),
             parseImageUrl(doc, imageSelector)
         )
-        return arr
     }
 
     @Throws(IOException::class)
@@ -89,7 +88,7 @@ class SearchBook : Cloneable {
 
 
     private fun parseBookname(doc: Element, nameSelector: String): String {
-        if (nameSelector.equals("")) return ""
+        if (nameSelector == "") return ""
         var name = doc.select(nameSelector).text()
         if (name.isNullOrEmpty()) {
             name = doc.select(nameSelector).attr("title")
@@ -99,15 +98,11 @@ class SearchBook : Cloneable {
 
 
     private fun parseImageUrl(doc: Element, imageSelector: String): String {
-        if (imageSelector.equals("")) return ""
+        if (imageSelector == "") return ""
         var url = doc.select(imageSelector).attr("src")
         if (url.startsWith("//")) {
             url = "http:" + url
         }
         return url
-    }
-
-    override fun clone(): SearchBook {
-        return super.clone() as SearchBook
     }
 }

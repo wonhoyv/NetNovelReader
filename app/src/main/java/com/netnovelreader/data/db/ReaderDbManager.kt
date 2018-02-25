@@ -9,8 +9,8 @@ import com.netnovelreader.common.UPDATEFLAG
  * Created by yangbo on 17-12-24.
  */
 object ReaderDbManager {
-    private var db: SQLiteDatabase? = null
-    private val dbName = "netnovelreader.db"
+    var db: SQLiteDatabase? = null
+    val dbName = "netnovelreader.db"
     var doTransaction = false
 
     fun getDB(): SQLiteDatabase {
@@ -25,7 +25,7 @@ object ReaderDbManager {
 
     fun closeDB() {
         synchronized(ReaderDbManager::class) {
-            if (doTransaction == false) {
+            if (!doTransaction) {
                 db?.close()
                 db = null
             }
@@ -123,8 +123,9 @@ object ReaderDbManager {
 
     fun setLatestRead(bookname: String) {
         getDB().execSQL(
-            "update ${ReaderSQLHelper.TABLE_SHELF} set ${ReaderSQLHelper.LATESTREAD}=(select max(${ReaderSQLHelper.LATESTREAD}) " +
-                    "from ${ReaderSQLHelper.TABLE_SHELF}) + 1 where ${ReaderSQLHelper.BOOKNAME}='$bookname';"
+            "update ${ReaderSQLHelper.TABLE_SHELF} set ${ReaderSQLHelper.LATESTREAD} = " +
+                    "ifnull((select max(${ReaderSQLHelper.LATESTREAD}) from ${ReaderSQLHelper.TABLE_SHELF}),0) + 1 " +
+                    "where ${ReaderSQLHelper.BOOKNAME}='$bookname';"
         )
         val cursor = getDB().rawQuery(
             "select min(${ReaderSQLHelper.LATESTREAD}) from ${ReaderSQLHelper.TABLE_SHELF}",
@@ -149,7 +150,7 @@ object ReaderDbManager {
         )
     }
 
-    //获取阅读记录
+    //获取阅读记录 1#3#10 表示id=3,第3章，第10页
     fun getRecord(bookname: String): Array<String> {
         val result = Array(2) { "" }
         val cursor = getDB().rawQuery(

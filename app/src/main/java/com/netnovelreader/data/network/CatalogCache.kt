@@ -13,11 +13,7 @@ object CatalogCache {
     /**
      * HashMap<目录页url, LinkedHashMap<章节名, 章节url>>
      */
-    val cache: LruCache<String, SearchBean>
-
-    init {
-        cache = LruCache(10)
-    }
+    val cache: LruCache<String, SearchBean> = LruCache(10)
 
     fun addCatalog(bookname: String, catalogUrl: String) {
 

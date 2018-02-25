@@ -36,7 +36,7 @@ class ChapterCache(private val cacheNum: Int, private val tableName: String) {
             e.printStackTrace()
         }
         return if (chapterTxtTable.containsKey(chapterNum)) {
-            chapterTxtTable.get(chapterNum) ?: " |"+FILENOTFOUND
+            chapterTxtTable[chapterNum] ?: " |"+FILENOTFOUND
         } else {
             try {
                 getText(chapterNum, enableDownload).apply {
@@ -64,7 +64,7 @@ class ChapterCache(private val cacheNum: Int, private val tableName: String) {
         val chapterFile = File("${getSavePath()}/$dirName/$chapterName")
         sb.append(
             if (chapterFile.exists() && chapterFile.isFile) chapterFile.readText()
-            else if(!enableDownload) FILENOTFOUND
+            else if (!enableDownload) FILENOTFOUND
             else getFromNet("${getSavePath()}/$dirName", chapterName)
         )
         return sb.toString()
@@ -91,15 +91,13 @@ class ChapterCache(private val cacheNum: Int, private val tableName: String) {
     @Throws(IOException::class)
     private fun readToCache(chapterNum: Int) = launch {
         if (cacheNum == 0) return@launch
-        chapterTxtTable.filter { it.key + 1 < chapterNum || it.key - cacheNum > chapterNum || it.value.length == 0 }
+        chapterTxtTable.filter { it.key + 1 < chapterNum || it.key - cacheNum > chapterNum || it.value.isEmpty() }
             .forEach { chapterTxtTable.remove(it.key) }
         if (chapterNum > 1 && !chapterTxtTable.contains(chapterNum - 1)) {
             chapterTxtTable.put(chapterNum - 1, getText(chapterNum - 1, true))
         }
-        for (i in 1..cacheNum) {
-            if (chapterNum + i <= maxChapterNum && !chapterTxtTable.contains(chapterNum + i)) {
-                chapterTxtTable.put(chapterNum + i, getText(chapterNum + i, true))
-            }
-        }
+        (1..cacheNum)
+            .filter { chapterNum + it <= maxChapterNum && !chapterTxtTable.contains(chapterNum + it) }
+            .forEach { chapterTxtTable.put(chapterNum + it, getText(chapterNum + it, true)) }
     }
 }

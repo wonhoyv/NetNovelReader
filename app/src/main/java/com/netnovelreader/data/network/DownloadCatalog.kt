@@ -45,7 +45,7 @@ class DownloadCatalog(val tableName: String, val catalogUrl: String) {
         val map = ParseHtml().getCatalog(catalogUrl)
         val filter =
             ReaderDbManager.getParseRule(url2Hostname(catalogUrl), ReaderSQLHelper.CATALOG_FILTER)
-        if (filter.length > 0) {
+        if (filter.isNotEmpty()) {
             filtCatalog(map, filter.split("|"))
         }
         return map

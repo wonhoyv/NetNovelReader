@@ -30,7 +30,7 @@ class DownloadChapter(
         File(dir, chapterName).takeIf { it.exists() }?.run { return this.readText() }
         var str = ParseHtml().getChapter(chapterUrl)
         ReaderDbManager.getParseRule(url2Hostname(chapterUrl), ReaderSQLHelper.CATALOG_FILTER)
-            .takeIf { it.length > 0 }
+            .takeIf { it.isNotEmpty() }
             ?.split("|")
             ?.forEach { str = str.replace(it, "") }
         return str

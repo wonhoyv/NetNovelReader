@@ -27,11 +27,15 @@ import java.util.*
 /**
  * Created by yangbo on 2018/1/12.
  */
-class ShelfViewModel(val context: Application) : AndroidViewModel(context), IShelfContract.IShelfViewModel {
+class ShelfViewModel(val context: Application) : AndroidViewModel(context),
+    IShelfContract.IShelfViewModel {
 
     val bookList by lazy {
-        MutableLiveData<ObservableArrayList<BookBean>>().run { value = ObservableArrayList(); value!! }
+        MutableLiveData<ObservableArrayList<BookBean>>().run {
+            value = ObservableArrayList(); value!!
+        }
     }
+
     //检查书籍是否有更新
     @Synchronized
     override suspend fun updateBooks() {
@@ -39,16 +43,16 @@ class ShelfViewModel(val context: Application) : AndroidViewModel(context), IShe
             updateCatalog(it).invokeOnCompletion {
                 val bookMap = ReaderDbManager.queryShelfBookList()
                 bookList.forEach { bean ->
-                    val value = bookMap.get(bean.bookid.get())
+                    val value = bookMap[bean.bookid.get()]
                     if (value != null) {       //如果该书在数据库里面，则更新该书状态，比如最新章节的变化
                         value[0].takeIf { it != bean.bookname.get() }
-                                ?.apply { bean.bookname.set(this) }
+                            ?.apply { bean.bookname.set(this) }
                         value[1].takeIf { it != bean.latestChapter.get() }
-                                ?.apply { bean.latestChapter.set(this) }
+                            ?.apply { bean.latestChapter.set(this) }
                         value[2].takeIf { it != bean.downloadURL.get() }
-                                ?.apply { bean.downloadURL.set(this) }
+                            ?.apply { bean.downloadURL.set(this) }
                         value[3].takeIf { it != bean.isUpdate.get() }
-                                ?.apply { bean.isUpdate.set(this) }
+                            ?.apply { bean.isUpdate.set(this) }
                     }
                 }
             }
@@ -65,20 +69,19 @@ class ShelfViewModel(val context: Application) : AndroidViewModel(context), IShe
      * 刷新书架，重新读数据库（数据库有没有更新）
      */
     override suspend fun refreshBookList() {
-        bookList.clear()
         val bookDirList = dirBookList()
         val bookMap = ReaderDbManager.queryShelfBookList()   //数据库里面的所有书
         val temp = ArrayList<BookBean>()
         bookMap.forEach {
             val bookBean = BookBean(
-                    ObservableInt(it.key),
-                    ObservableField(it.value[0]),
-                    ObservableField(it.value[1]),
-                    ObservableField(it.value[2]),
-                    ObservableField(getBitmap(it.key)),
-                    ObservableField(it.value[3])
+                ObservableInt(it.key),
+                ObservableField(it.value[0]),
+                ObservableField(it.value[1]),
+                ObservableField(it.value[2]),
+                ObservableField(getBitmap(it.key)),
+                ObservableField(it.value[3])
             )
-            if (bookDirList?.contains(id2TableName(bookBean.bookid.get())) == true) { //有没有新添加的书籍
+            if (bookDirList?.contains(id2TableName(bookBean.bookid.get())) == true) {
                 temp.add(bookBean)
                 if (ReaderDbManager.getChapterCount(id2TableName(bookBean.bookid.get())) == 0) {
                     updateCatalog(bookBean)
@@ -87,6 +90,7 @@ class ShelfViewModel(val context: Application) : AndroidViewModel(context), IShe
                 bookBean.bookname.get()?.run { deleteBook(this) }
             }
         }
+        bookList.clear()
         bookList.addAll(temp)
     }
 
@@ -126,7 +130,10 @@ class ShelfViewModel(val context: Application) : AndroidViewModel(context), IShe
         return if (file.exists()) {
             BitmapFactory.decodeFile(file.path)
         } else {
-            ((ContextCompat.getDrawable(context, R.drawable.cover_default) as BitmapDrawable)).bitmap
+            ((ContextCompat.getDrawable(
+                context,
+                R.drawable.cover_default
+            ) as BitmapDrawable)).bitmap
         }
     }
 }

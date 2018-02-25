@@ -4,7 +4,6 @@ import android.content.Intent
 import android.databinding.ObservableArrayList
 import android.os.Bundle
 import android.support.v4.app.Fragment
-import android.support.v7.widget.LinearLayoutManager
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -46,9 +45,9 @@ class NovelListFragment : Fragment() {
     }
 
     private fun initView() {
-        novelList.init(RecyclerAdapter(bookList, R.layout.item_catalog_detial, NovelListItemClickEvent()),
-                LinearLayoutManager(context), null)
-
+        novelList.init(
+            RecyclerAdapter(bookList, R.layout.item_catalog_detial, NovelListItemClickEvent()), null
+        )
     }
 
     private fun initData() {

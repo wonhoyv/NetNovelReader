@@ -11,7 +11,6 @@ import android.databinding.DataBindingUtil
 import android.os.Bundle
 import android.support.v4.app.ActivityCompat
 import android.support.v7.app.AppCompatActivity
-import android.support.v7.widget.LinearLayoutManager
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
@@ -40,29 +39,28 @@ class ShelfActivity : AppCompatActivity(), IShelfContract.IShelfView {
     override fun onCreate(savedInstanceState: Bundle?) {
         themeId = PreferenceManager.getThemeId(this).also { setTheme(it) }
         super.onCreate(savedInstanceState)
-        setViewModel()
+        initViewModel()
         hasPermission = checkPermission(android.Manifest.permission.WRITE_EXTERNAL_STORAGE)
         if (!hasPermission) {
             requirePermission(android.Manifest.permission.WRITE_EXTERNAL_STORAGE, 1)
         }
-        init()
+        initView()
     }
 
     /**
      * DataBinding绑定
      */
-    override fun setViewModel() {
+    override fun initViewModel() {
         val factory = ViewModelProvider.AndroidViewModelFactory.getInstance(application)
-        shelfViewModel = ViewModelProviders.of(this,factory).get(ShelfViewModel::class.java)
+        shelfViewModel = ViewModelProviders.of(this, factory).get(ShelfViewModel::class.java)
         DataBindingUtil.setContentView<ActivityShelfBinding>(this, R.layout.activity_shelf)
     }
 
-    override fun init() {
+    override fun initView() {
         setSupportActionBar(shelfToolbar)
         shelfRecycler.init(
-                RecyclerAdapter(shelfViewModel?.bookList, R.layout.item_shelf, ShelfClickEvent()),
-                LinearLayoutManager(this),
-                null
+            RecyclerAdapter(shelfViewModel?.bookList, R.layout.item_shelf, ShelfClickEvent()),
+            null
         )
         shelf_layout.setColorSchemeResources(R.color.gray)
         var time = System.currentTimeMillis()
@@ -91,6 +89,7 @@ class ShelfActivity : AppCompatActivity(), IShelfContract.IShelfView {
         updateShelf()
     }
 
+    @Suppress("UNCHECKED_CAST")
     override fun onDestroy() {
         super.onDestroy()
         job?.cancel()

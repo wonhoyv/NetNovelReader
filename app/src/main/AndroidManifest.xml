@@ -33,8 +33,8 @@
 
         <activity android:name=".ui.SettingActivity" />
         <activity android:name=".ui.NovelDetailActivity" />
-        <activity android:name=".ui.CatalogGridActivity"></activity>
-        <activity android:name=".ui.NovelCatalogDetailActivity"></activity>
+        <activity android:name=".ui.CatalogGridActivity" />
+        <activity android:name=".ui.NovelCatalogDetailActivity" />
     </application>
 
 </manifest>

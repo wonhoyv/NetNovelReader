@@ -35,7 +35,7 @@ class ReaderView : View, GestureDetector.OnGestureListener {
 
     var text: ObservableField<String>? by InvalidateAfterSet(null)    //一个未分割章节,格式：章节名|正文
     var textArray: ArrayList<ArrayList<String>>? =
-            null                     //分割后的章节,view显示的内容，第i项是第i行文字内容
+        null                     //分割后的章节,view显示的内容，第i项是第i行文字内容
     var title: String? by InvalidateAfterSet("")                      //章节名称
     var pageNum: Int? by InvalidateAfterSet(1)                        //页数
     var maxPageNum = 0
@@ -55,9 +55,9 @@ class ReaderView : View, GestureDetector.OnGestureListener {
 
     constructor(context: Context, attrs: AttributeSet?) : this(context, attrs, 0)
     constructor(context: Context, attrs: AttributeSet?, defStyleAttr: Int) : super(
-            context,
-            attrs,
-            defStyleAttr
+        context,
+        attrs,
+        defStyleAttr
     ) {
         init()
     }
@@ -125,20 +125,20 @@ class ReaderView : View, GestureDetector.OnGestureListener {
         //底部右下角绘制：章节相关信息    格式为:    第 XXX 章节 YYY章节名  ：  n / 该章节总共页数
         val bottomText = "${title ?: ""} $pageNum/$maxPageNum"
         canvas.drawText(
-                bottomText,
-                width - mBottomPaint.measureText(bottomText) - getMarginLeft(),
-                height - indicatorFontSize,
-                mBottomPaint
+            bottomText,
+            width - mBottomPaint.measureText(bottomText) - getMarginLeft(),
+            height - indicatorFontSize,
+            mBottomPaint
         )
 
         if (textArray == null || maxPageNum < 1) return              //正文内容缺乏，直接不绘制了
         //绘制正文
         for (i in 0 until textArray!![pageNum!! - 1].size) {
             canvas.drawText(
-                    textArray!![pageNum!! - 1][i].replace(" ", "    "),
-                    getMarginLeft(),
-                    getMarginTop() + i * txtFontSize!! * rowSpace,
-                    mMainPaint
+                textArray!![pageNum!! - 1][i].replace(" ", "    "),
+                getMarginLeft(),
+                getMarginTop() + i * txtFontSize!! * rowSpace,
+                mMainPaint
             )
         }
     }
@@ -187,10 +187,10 @@ class ReaderView : View, GestureDetector.OnGestureListener {
     }
 
     override fun onScroll(
-            e1: MotionEvent?,
-            e2: MotionEvent?,
-            distanceX: Float,
-            distanceY: Float
+        e1: MotionEvent?,
+        e2: MotionEvent?,
+        distanceX: Float,
+        distanceY: Float
     ): Boolean {
         return false
     }
@@ -294,7 +294,7 @@ class ReaderView : View, GestureDetector.OnGestureListener {
                         1, 2 -> if (maxPageNum == 0) 0 else 1
                         3 -> maxPageNum
                         else -> 1
-                    }.let { if(it!! > maxPageNum) maxPageNum else it}
+                    }.let { if (it!! > maxPageNum) maxPageNum else it }
                 }
                 else -> postInvalidate()  //刷新view
             }

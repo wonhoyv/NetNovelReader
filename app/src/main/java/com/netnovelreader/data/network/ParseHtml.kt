@@ -19,15 +19,14 @@ class ParseHtml {
      */
     @Throws(IOException::class)
     fun getChapter(url: String): String {
-        val txt: String?
         val selector = ReaderDbManager.getParseRule(
             url2Hostname(url),
             ReaderSQLHelper.CHAPTER_RULE
         )
-        if (selector.isEmpty() || selector.length < 2) {
-            txt = getChapterWithOutSelector(url)
+        val txt = if (selector.isEmpty() || selector.length < 2) {
+            getChapterWithOutSelector(url)
         } else {
-            txt = Jsoup.connect(url).headers(getHeaders(url))
+            Jsoup.connect(url).headers(getHeaders(url))
                 .timeout(TIMEOUT).get().select(selector).text()
         }
         return "    " + txt!!.replace(" ", "\n\n  ")
@@ -67,11 +66,9 @@ class ParseHtml {
         val elements = Jsoup.connect(url).get().allElements
         val indexList = ArrayList<Element>()
         if (elements.size > 1) {
-            for (i in 1..elements.size - 1) {
-                if (elements[0].text().length > elements.get(i).text().length * 2) {
-                    indexList.add(elements[i])
-                }
-            }
+            (1 until elements.size)
+                .filter { elements[0].text().length > elements[it].text().length * 2 }
+                .forEach { indexList.add(elements[it]) }
         }
         elements.removeAll(indexList)
         return elements.last().text()

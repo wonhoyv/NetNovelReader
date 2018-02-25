@@ -15,9 +15,11 @@ class DownloadTask(val tableName: String, val url: String) {
         DownloadCatalog(tableName, url).download()
         val runnables = ArrayList<DownloadChapter>()
         ReaderDbManager.getChapterNameAndUrl(tableName, 0).forEach {
-            runnables.add(DownloadChapter(tableName,
-                "${getSavePath()}/$tableName".apply { File(this).mkdirs() }, it.key, it.value
-            )
+            runnables.add(
+                DownloadChapter(
+                    tableName,
+                    "${getSavePath()}/$tableName".apply { File(this).mkdirs() }, it.key, it.value
+                )
             )
         }
         return runnables

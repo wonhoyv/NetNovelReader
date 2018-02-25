@@ -32,16 +32,17 @@ import de.hdodenhof.circleimageview.CircleImageView
 import kotlinx.android.synthetic.main.activity_reader.*
 import kotlinx.android.synthetic.main.item_catalog.view.*
 import kotlinx.coroutines.experimental.android.UI
+import kotlinx.coroutines.experimental.async
 import kotlinx.coroutines.experimental.launch
 
 
 class ReaderActivity : AppCompatActivity(), IReaderContract.IReaderView,
-    ReaderView.ReaderPageListener, ReaderView.FirstDrawListener,
-    IClickEvent {
+    ReaderView.ReaderPageListener, ReaderView.FirstDrawListener, IClickEvent {
     val FONTSIZE = "FontSize"
     var readerViewModel: ReaderViewModel? = null
     var dialog: AlertDialog? = null
     var netStateReceiver: NetChangeReceiver? = null
+    var isInit = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         if (PreferenceManager.isFullScreen(this)) {
@@ -52,25 +53,24 @@ class ReaderActivity : AppCompatActivity(), IReaderContract.IReaderView,
         }
         PreferenceManager.getThemeId(this).also { setTheme(it) }
         super.onCreate(savedInstanceState)
-        setViewModel()
-        init()
+        initViewModel()
+        initView()
     }
 
-    override fun setViewModel() {
+    override fun initViewModel() {
         val factory = ViewModelProvider.AndroidViewModelFactory.getInstance(application)
-        readerViewModel = ViewModelProviders.of(this,factory).get(ReaderViewModel::class.java)
+        readerViewModel = ViewModelProviders.of(this, factory).get(ReaderViewModel::class.java)
         val binding =
             DataBindingUtil.setContentView<ActivityReaderBinding>(this, R.layout.activity_reader)
         binding.clickEvent = ReaderClickEvent()
         binding.readerViewModel = readerViewModel
-        binding.readerView.background = getDrawable(R.drawable.bg_readbook_yellow)
         binding.readerView.firstDrawListener = this
         binding.readerView.pageListener = this
         binding.readerView.txtFontSize = getSharedPreferences(PREFERENCE_NAME, Context.MODE_PRIVATE)
             .getFloat(FONTSIZE, 50f)
     }
 
-    override fun init() {
+    override fun initView() {
         netStateReceiver = NetChangeReceiver()
         val filter = IntentFilter().apply { addAction(ConnectivityManager.CONNECTIVITY_ACTION) }
         registerReceiver(netStateReceiver, filter)  //网络变化广播接收器
@@ -112,9 +112,14 @@ class ReaderActivity : AppCompatActivity(), IReaderContract.IReaderView,
      */
     override fun doDrawPrepare() {
         launch {
-            readerView.pageNum = readerViewModel?.initData(intent.getStringExtra("bookname"),
-                    PreferenceManager.getAutoDownNum(this@ReaderActivity))
+            readerView.pageNum = async {
+                readerViewModel?.initData(
+                    intent.getStringExtra("bookname"),
+                    PreferenceManager.getAutoDownNum(this@ReaderActivity)
+                )
+            }.await()
             readerViewModel?.getChapter(ReaderViewModel.CHAPTERCHANGE.BY_CATALOG, null)
+            isInit = true
         }
     }
 
@@ -127,14 +132,14 @@ class ReaderActivity : AppCompatActivity(), IReaderContract.IReaderView,
 
     override fun nextChapter() {
         hideHeadFoot()
-        launch{
+        launch {
             readerViewModel?.getChapter(ReaderViewModel.CHAPTERCHANGE.NEXT, null)
         }
     }
 
     override fun previousChapter() {
         hideHeadFoot()
-        launch{
+        launch {
             readerViewModel?.getChapter(ReaderViewModel.CHAPTERCHANGE.PREVIOUS, null)
         }
     }
@@ -183,7 +188,7 @@ class ReaderActivity : AppCompatActivity(), IReaderContract.IReaderView,
         override fun onReceive(context: Context, intent: Intent) {
             val cm = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
             val isAvailable = cm.activeNetworkInfo?.isAvailable ?: false
-            if (isAvailable && readerViewModel?.isLoading?.get() != false) {   //当网络变为连接状态，并且加载条显示时，下载章节内容
+            if (isAvailable && isInit && readerViewModel?.isLoading?.get() != false) {   //当网络变为连接状态，并且加载条显示时，下载章节内容
                 launch {
                     readerViewModel!!.downloadAndShow()
                     readerViewModel?.setRecord(
@@ -199,13 +204,13 @@ class ReaderActivity : AppCompatActivity(), IReaderContract.IReaderView,
     inner class CatalogItemClickListener : IClickEvent {
         fun onChapterClick(v: View) {
             launch(UI) {
-                launch{
+                launch {
                     readerViewModel?.getChapter(
-                            ReaderViewModel.CHAPTERCHANGE.BY_CATALOG, v.itemChapter.text.toString()
+                        ReaderViewModel.CHAPTERCHANGE.BY_CATALOG, v.itemChapter.text.toString()
                     )
                     readerViewModel?.setRecord(
-                            readerViewModel?.chapterNum ?: 1,
-                            readerView.pageNum ?: 1
+                        readerViewModel?.chapterNum ?: 1,
+                        readerView.pageNum ?: 1
                     )
                 }
             }

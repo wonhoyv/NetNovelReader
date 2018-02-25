@@ -14,7 +14,6 @@ import com.netnovelreader.data.db.ReaderDbManager
 import com.netnovelreader.data.network.ChapterCache
 import com.netnovelreader.data.network.DownloadCatalog
 import com.netnovelreader.interfaces.IReaderContract
-import kotlinx.coroutines.experimental.async
 import kotlinx.coroutines.experimental.delay
 import kotlinx.coroutines.experimental.launch
 import java.io.File
@@ -23,7 +22,8 @@ import java.io.File
  * Created by yangbo on 18-1-13.
  */
 
-class ReaderViewModel(context: Application) : AndroidViewModel(context), IReaderContract.IReaderViewModel {
+class ReaderViewModel(context: Application) : AndroidViewModel(context),
+    IReaderContract.IReaderViewModel {
 
     enum class CHAPTERCHANGE {
         NEXT,                       //下一章
@@ -32,14 +32,16 @@ class ReaderViewModel(context: Application) : AndroidViewModel(context), IReader
     }
 
     val catalog by lazy {
-        MutableLiveData<ObservableArrayList<ReaderBean>>().run { value = ObservableArrayList(); value!! }
+        MutableLiveData<ObservableArrayList<ReaderBean>>().run {
+            value = ObservableArrayList(); value!!
+        }
     }
     /**
      * 一页显示的内容
      */
     var text: ObservableField<String> = ObservableField("")
 
-    var isLoading = ObservableBoolean(false)
+    var isLoading = ObservableBoolean(true)
 
     @Volatile
     var dirName: String? = null
@@ -57,26 +59,25 @@ class ReaderViewModel(context: Application) : AndroidViewModel(context), IReader
     private var tableName = ""
     lateinit var chapterCache: ChapterCache
 
-    lateinit private var bookName: String
+    private lateinit var bookName: String
     private var CACHE_NUM: Int = 0
     /**
      * readerView第一次绘制时执行, 返还阅读记录页数
      */
-    override suspend fun initData(bookName: String, CACHE_NUM: Int): Int = async {
+    override suspend fun initData(bookName: String, CACHE_NUM: Int): Int {
         this@ReaderViewModel.bookName = bookName
         this@ReaderViewModel.CACHE_NUM = CACHE_NUM
         tableName = id2TableName(ReaderDbManager.getBookId(bookName))
-        maxChapterNum = ReaderDbManager.getChapterCount(tableName).takeIf { it != 0 } ?: return@async 0
+        maxChapterNum = ReaderDbManager.getChapterCount(tableName).takeIf { it != 0 } ?: return 0
         val record = getRecord()
         chapterNum = record[0]
         dirName = id2TableName(record[2])
         chapterCache = ChapterCache(CACHE_NUM, tableName).apply { init(maxChapterNum, dirName!!) }
-        return@async record[1]
-    }.await()
+        return record[1]
+    }
 
     //获取章节内容
     override suspend fun getChapter(type: CHAPTERCHANGE, chapterName: String?) {
-        isLoading.set(true)
         when (type) {
             CHAPTERCHANGE.NEXT -> if (chapterNum >= maxChapterNum) return else chapterNum++
             CHAPTERCHANGE.PREVIOUS -> if (chapterNum < 2) return else chapterNum--
@@ -84,6 +85,7 @@ class ReaderViewModel(context: Application) : AndroidViewModel(context), IReader
                 chapterNum = ReaderDbManager.getChapterId(tableName, chapterName)
             }
         }
+        isLoading.set(true)
         launch { if (chapterNum == maxChapterNum) updateCatalog() }
         val str = chapterCache.getChapter(chapterNum, false)
         text.set(str)
@@ -135,17 +137,17 @@ class ReaderViewModel(context: Application) : AndroidViewModel(context), IReader
         if (num < NotDeleteNum) return
         val id = num - NotDeleteNum
         ReaderDbManager.setReaded(tableName, id)
-                .forEach { File("${getSavePath()}/$tableName/$it").delete() }
+            .forEach { File("${getSavePath()}/$tableName/$it").delete() }
     }
 
     /**
      * 获取阅读记录
      */
-    private suspend fun getRecord(): Array<Int> {
+    private fun getRecord(): Array<Int> {
         val queryResult = ReaderDbManager.getRecord(bookName) //阅读记录 3#2 表示第3章第2页
         val array = queryResult[1]
-                .let { if (it.length < 1) "1#1" else it }
-                .split("#")
+            .let { if (it.isEmpty()) "1#1" else it }
+            .split("#")
         return arrayOf(array[0].toInt(), array[1].toInt(), queryResult[0].toInt())
     }
 

@@ -17,18 +17,18 @@
     <android.support.constraint.ConstraintLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:onClick="@{clickEvent::onClick}"
-        android:background="#ffffff">
+        android:background="#ffffff"
+        android:onClick="@{clickEvent::onClick}">
 
         <TextView
             android:id="@+id/tvSearchSuggest"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="14dp"
             android:layout_marginStart="24dp"
             android:layout_marginTop="14dp"
-            android:drawableLeft="@drawable/search"
+            android:layout_marginBottom="14dp"
             android:drawablePadding="30dp"
+            android:drawableStart="@drawable/search"
             android:gravity="center"
             android:textSize="15sp"
             app:layout_constraintBottom_toBottomOf="parent"

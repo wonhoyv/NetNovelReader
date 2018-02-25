@@ -19,9 +19,9 @@ class RecyclerAdapter<T>(
     private val resId: Int,
     val clickEvent: IClickEvent?
 ) : RecyclerView.Adapter<RecyclerAdapter.BindingViewHolder<T>>() {
-    lateinit var listener: ArrayListChangeListener<T>
+    val listener: ArrayListChangeListener<T> = ArrayListChangeListener(this)
+
     init {
-        listener = ArrayListChangeListener(this)
         itemDetails?.addOnListChangedCallback(listener)
     }
 
@@ -42,11 +42,11 @@ class RecyclerAdapter<T>(
         return itemDetails!!.size
     }
 
-    public fun removeDataChangeListener(){
+    fun removeDataChangeListener() {
         itemDetails?.removeOnListChangedCallback(listener)
     }
 
-    class BindingViewHolder<T>(private val binding: ViewDataBinding) :
+    class BindingViewHolder<in T>(private val binding: ViewDataBinding) :
         RecyclerView.ViewHolder(binding.root) {
         fun bind(itemData: T?, clickEvent: IClickEvent?) {
             binding.setVariable(BR.itemDetail, itemData)

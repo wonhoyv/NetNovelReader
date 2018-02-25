@@ -26,11 +26,11 @@ val NotDeleteNum = 3 //自动删除已读章节，但保留最近3章
 val THREAD_NUM = Runtime.getRuntime().availableProcessors() * 2 / 3 //线程数
 
 fun getSavePath(): String =
-        if (Environment.getExternalStorageState() == Environment.MEDIA_MOUNTED) {
-            Environment.getExternalStorageDirectory().path + "/netnovelreader"
-        } else {
-            "/data/data/com.netnovelreader"
-        }
+    if (Environment.getExternalStorageState() == Environment.MEDIA_MOUNTED) {
+        Environment.getExternalStorageDirectory().path + "/netnovelreader"
+    } else {
+        "/data/data/com.netnovelreader"
+    }
 
 //例如: http://www.hello.com/world/fjwoj/foew.html  中截取 hello.com
 fun url2Hostname(url: String): String {
@@ -48,22 +48,24 @@ fun tableName2Id(tableName: String): String = tableName.replace("BOOK", "")
 
 fun getHeaders(url: String): HashMap<String, String> {
     val map = HashMap<String, String>()
-    map.put("accept", "indicator/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8")
-    map.put("user-agent", UA)
-    map.put("Upgrade-Insecure-Requests", "1")
-    map.put("Referer", "http://www.${url2Hostname(url)}/")
+    map["accept"] = "indicator/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+    map["user-agent"] = UA
+    map["Upgrade-Insecure-Requests"] = "1"
+    map["Referer"] = "http://www.${url2Hostname(url)}/"
     return map
 }
 
 //对不合法url修复
 fun fixUrl(referenceUrl: String, fixUrl: String): String {
+    if (fixUrl.isEmpty()) return ""
     if (fixUrl.startsWith("http")) return fixUrl
     if (fixUrl.startsWith("//")) return "http:" + fixUrl
-    val arr = fixUrl.split("/")
-    if (arr.size < 2) return referenceUrl.substring(0, referenceUrl.lastIndexOf("/") + 1) + fixUrl
+    val str = if (fixUrl.startsWith("/")) fixUrl else "/" + fixUrl
+    val arr = str.split("/")
+    if (arr.size < 2) return referenceUrl.substring(0, referenceUrl.lastIndexOf("/")) + str
     if (referenceUrl.contains(arr[1]))
-        return referenceUrl.substring(0, referenceUrl.indexOf(arr[1]) - 1) + fixUrl
-    return referenceUrl.substring(0, referenceUrl.lastIndexOf("/")) + fixUrl
+        return referenceUrl.substring(0, referenceUrl.indexOf(arr[1]) - 1) + str
+    return referenceUrl.substring(0, referenceUrl.lastIndexOf("/")) + str
 }
 
 //简化书写
@@ -87,13 +89,13 @@ inline fun <T> Call<T>.enqueueCall(crossinline block: (t: T?) -> Unit) {
 }
 
 fun <T> RecyclerView.init(
-        adapter: RecyclerAdapter<T>,
-        layoutManager: RecyclerView.LayoutManager = LinearLayoutManager(this.context),
-        decor: RecyclerView.ItemDecoration? = NovelItemDecoration(this.context),
-        animator: RecyclerView.ItemAnimator  = DefaultItemAnimator()
+    adapter: RecyclerAdapter<T>,
+    decor: RecyclerView.ItemDecoration? = NovelItemDecoration(this.context),
+    layoutManager: RecyclerView.LayoutManager = LinearLayoutManager(this.context),
+    animator: RecyclerView.ItemAnimator = DefaultItemAnimator()
 ) {
     this.layoutManager = layoutManager
     this.adapter = adapter
     this.itemAnimator = animator
-    if(decor != null) this.addItemDecoration(decor)
+    if (decor != null) this.addItemDecoration(decor)
 }

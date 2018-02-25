@@ -84,7 +84,11 @@ class NovelCatalogDetailActivity : AppCompatActivity() {
             filterView.layoutManager = LinearLayoutManager(this)
             filterView.itemAnimator = DefaultItemAnimator()
             filterAdapter =
-                    RecyclerAdapter(filterList, R.layout.item_filter, FilterNovelItemClickListener())
+                    RecyclerAdapter(
+                        filterList,
+                        R.layout.item_filter,
+                        FilterNovelItemClickListener()
+                    )
             filterView.adapter = filterAdapter
             dialog = builder.setView(view).create()
             val dialogWindow = dialog!!.window

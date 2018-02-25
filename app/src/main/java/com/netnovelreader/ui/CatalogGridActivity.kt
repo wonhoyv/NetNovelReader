@@ -43,14 +43,14 @@ class CatalogGridActivity : AppCompatActivity() {
 
     private fun initView() {
         maleRecyclerView.init(
-                RecyclerAdapter(resultList, R.layout.grid_item_novel_classfy, CatalogItemClick()),
-                GridLayoutManager(this, 3, VERTICAL, false),
-                GridDivider(this,1,Color.BLACK)
+            RecyclerAdapter(resultList, R.layout.grid_item_novel_classfy, CatalogItemClick()),
+            GridDivider(this, 1, Color.BLACK),
+            GridLayoutManager(this, 3, VERTICAL, false)
         )
     }
 
     private fun initData() {
-        ApiManager.mAPI!!.getNovelCatalogData()
+        ApiManager.mAPI.getNovelCatalogData()
             .enqueueCall {
                 it?.let {
                     resultList.clear()
