@@ -9,8 +9,6 @@ import android.support.v7.app.AppCompatActivity
 import android.support.v7.widget.GridLayoutManager
 import android.support.v7.widget.RecyclerView.VERTICAL
 import android.view.MenuItem
-import android.view.View
-import android.widget.TextView
 import com.netnovelreader.R
 import com.netnovelreader.bean.NovelCatalog
 import com.netnovelreader.common.*
@@ -69,11 +67,9 @@ class CatalogGridActivity : AppCompatActivity() {
     }
 
     inner class CatalogItemClick : IClickEvent {
-        fun onItemClick(v: View) {
-            val major = v.findViewById<TextView>(R.id.tvCatalog).text.toString()
-
+        fun onItemClick(name: String) {
             val intent = Intent(this@CatalogGridActivity, NovelCatalogDetailActivity::class.java)
-            intent.putExtra("major", major)
+            intent.putExtra("major", name)
             this@CatalogGridActivity.startActivity(intent)
         }
 

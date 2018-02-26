@@ -17,6 +17,7 @@ import com.netnovelreader.interfaces.IReaderContract
 import kotlinx.coroutines.experimental.delay
 import kotlinx.coroutines.experimental.launch
 import java.io.File
+import java.io.IOException
 
 /**
  * Created by yangbo on 18-1-13.
@@ -65,8 +66,8 @@ class ReaderViewModel(context: Application) : AndroidViewModel(context),
      * readerView第一次绘制时执行, 返还阅读记录页数
      */
     override suspend fun initData(bookName: String, CACHE_NUM: Int): Int {
-        this@ReaderViewModel.bookName = bookName
-        this@ReaderViewModel.CACHE_NUM = CACHE_NUM
+        this.bookName = bookName
+        this.CACHE_NUM = CACHE_NUM
         tableName = id2TableName(ReaderDbManager.getBookId(bookName))
         maxChapterNum = ReaderDbManager.getChapterCount(tableName).takeIf { it != 0 } ?: return 0
         val record = getRecord()
@@ -89,7 +90,7 @@ class ReaderViewModel(context: Application) : AndroidViewModel(context),
         launch { if (chapterNum == maxChapterNum) updateCatalog() }
         val str = chapterCache.getChapter(chapterNum, false)
         text.set(str)
-        this@ReaderViewModel.chapterName = str.substring(0, str.indexOf("|"))
+        this.chapterName = str.substring(0, str.indexOf("|"))
         if (str.substring(str.indexOf("|") + 1) == ChapterCache.FILENOTFOUND) {
             downloadAndShow()
         } else {
@@ -152,7 +153,11 @@ class ReaderViewModel(context: Application) : AndroidViewModel(context),
     }
 
     private fun updateCatalog() {
-        DownloadCatalog(tableName, ReaderDbManager.getCatalogUrl(bookName)).download()
+        try {
+            DownloadCatalog(tableName, ReaderDbManager.getCatalogUrl(bookName)).download()
+        }catch (e: IOException){
+            e.printStackTrace()
+        }
         maxChapterNum = ReaderDbManager.getChapterCount(tableName)
     }
 }

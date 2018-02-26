@@ -7,7 +7,6 @@ import android.support.v4.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.TextView
 import com.netnovelreader.R
 import com.netnovelreader.bean.NovelList
 import com.netnovelreader.common.RecyclerAdapter
@@ -61,8 +60,7 @@ class NovelListFragment : Fragment() {
 
     inner class NovelListItemClickEvent : IClickEvent {
 
-        fun onClickDetail(v: View) {
-            val id = v.findViewById<TextView>(R.id.bookId).text.toString()
+        fun onClickDetail(id: String) {
             ApiManager.mAPI.getNovelIntroduce(id).enqueueCall {
                 val intent = Intent(context, NovelDetailActivity::class.java)
                 intent.putExtra("data", it)

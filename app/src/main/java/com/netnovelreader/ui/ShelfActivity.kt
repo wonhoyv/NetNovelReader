@@ -13,7 +13,6 @@ import android.support.v4.app.ActivityCompat
 import android.support.v7.app.AppCompatActivity
 import android.view.Menu
 import android.view.MenuItem
-import android.view.View
 import com.netnovelreader.R
 import com.netnovelreader.common.PreferenceManager
 import com.netnovelreader.common.RecyclerAdapter
@@ -25,7 +24,6 @@ import com.netnovelreader.interfaces.IClickEvent
 import com.netnovelreader.interfaces.IShelfContract
 import com.netnovelreader.viewmodel.ShelfViewModel
 import kotlinx.android.synthetic.main.activity_shelf.*
-import kotlinx.android.synthetic.main.item_shelf.view.*
 import kotlinx.coroutines.experimental.Job
 import kotlinx.coroutines.experimental.launch
 
@@ -114,7 +112,9 @@ class ShelfActivity : AppCompatActivity(), IShelfContract.IShelfView {
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         return when (item.itemId) {
             R.id.search_button -> {
-                startActivity(Intent(this, SearchActivity::class.java))
+                startActivity(Intent(this, SearchActivity::class.java).apply {
+                    this.putExtra("type", 0)
+                })
                 true
             }
             R.id.action_settings -> {
@@ -122,7 +122,9 @@ class ShelfActivity : AppCompatActivity(), IShelfContract.IShelfView {
                 true
             }
             R.id.edit_site_preference -> {
-                startActivity(Intent(this, SettingActivity::class.java))
+                startActivity(Intent(this, SettingActivity::class.java).apply {
+                    this.putExtra("type", 1)
+                })
                 true
             }
             R.id.classfied -> {
@@ -168,19 +170,18 @@ class ShelfActivity : AppCompatActivity(), IShelfContract.IShelfView {
      * recyclerView item点击事件
      */
     inner class ShelfClickEvent : IClickEvent {
-        fun itemOnClick(v: View) {
+        fun itemOnClick(bookname: String) {
             job?.cancel()
-            val bookname = v.nameView.text.toString()
             launch { shelfViewModel?.cancelUpdateFlag(bookname) }
-            v.context.startActivity(Intent(v.context, ReaderActivity::class.java)
+            this@ShelfActivity.startActivity(Intent(this@ShelfActivity, ReaderActivity::class.java)
                 .apply { this.putExtra("bookname", bookname) })
         }
 
-        fun itemOnLongClick(view: View): Boolean {
+        fun itemOnLongClick(bookname: String): Boolean {
             val listener = DialogInterface.OnClickListener { _, which ->
                 if (which == Dialog.BUTTON_POSITIVE) {
                     launch {
-                        shelfViewModel?.deleteBook(view.nameView.text.toString())
+                        shelfViewModel?.deleteBook(bookname)
                     }
                 }
             }
@@ -188,7 +189,7 @@ class ShelfActivity : AppCompatActivity(), IShelfContract.IShelfView {
                 .setTitle(
                     getString(R.string.deleteBook).replace(
                         "book",
-                        view.nameView.text.toString()
+                            bookname
                     )
                 )
                 .setPositiveButton(R.string.yes, listener)

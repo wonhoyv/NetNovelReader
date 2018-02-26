@@ -27,14 +27,12 @@ class SearchActivityTest {
     @Test
     fun onSearchViewEditNotNull() {
         onView(withId(R.id.searchViewBar)).perform(typeSearchViewText("极道天魔"))
-        onView(withId(R.id.searchSuggestRecycler)).check(matches(isDisplayed()))
         onView(withId(R.id.linearLayout)).check(matches(not(isDisplayed())))
     }
 
     @Test
     fun onSearchViewEditisNull() {
         onView(withId(R.id.searchViewBar)).perform(typeSearchViewText(""))
-        onView(withId(R.id.searchSuggestRecycler)).check(matches(not(isDisplayed())))
         onView(withId(R.id.linearLayout)).check(matches(isDisplayed()))
     }
 

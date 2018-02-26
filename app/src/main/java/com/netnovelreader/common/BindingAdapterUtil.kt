@@ -1,7 +1,6 @@
 package com.netnovelreader.common
 
 import android.databinding.BindingAdapter
-import android.databinding.ObservableField
 import android.graphics.Bitmap
 import android.support.v4.content.ContextCompat
 import android.widget.ImageView
@@ -19,6 +18,6 @@ fun loadUrl(imageView: ImageView, url: String?) {
 }
 
 @BindingAdapter("android:src")
-fun setSrc(imageView: ImageView, bitmap: ObservableField<Bitmap>) {
-    imageView.setImageBitmap(bitmap.get())
+fun setSrc(imageView: ImageView, bitmap: Bitmap) {
+    imageView.setImageBitmap(bitmap)
 }

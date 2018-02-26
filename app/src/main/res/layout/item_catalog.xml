@@ -16,7 +16,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_margin="4dp"
-        android:onClick="@{clickEvent::onChapterClick}"
+        android:onClick="@{(chapterName) -> clickEvent.onChapterClick(itemDetail.catalogItem)}"
         android:orientation="vertical">
 
         <TextView

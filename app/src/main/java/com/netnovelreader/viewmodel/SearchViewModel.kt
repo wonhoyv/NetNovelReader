@@ -4,6 +4,8 @@ import android.app.Application
 import android.app.Dialog
 import android.arch.lifecycle.AndroidViewModel
 import android.arch.lifecycle.MutableLiveData
+import android.database.Cursor
+import android.database.MatrixCursor
 import android.databinding.ObservableArrayList
 import android.databinding.ObservableBoolean
 import android.databinding.ObservableField
@@ -13,7 +15,6 @@ import android.graphics.BitmapFactory
 import android.support.v4.content.ContextCompat
 import com.netnovelreader.R
 import com.netnovelreader.ReaderApplication.Companion.threadPool
-import com.netnovelreader.bean.KeywordsBean
 import com.netnovelreader.bean.NovelIntroduce
 import com.netnovelreader.bean.SearchBean
 import com.netnovelreader.bean.SearchHotWordsBean
@@ -41,17 +42,11 @@ class SearchViewModel(val context: Application) : AndroidViewModel(context),
             value = ObservableArrayList(); value!!
         }
     }
-    val suggestList by lazy {
-        MutableLiveData<ObservableArrayList<KeywordsBean>>().run {
-            value = ObservableArrayList(); value!!
-        }   //输入部分书名自动补全提示
-    }
     val isChangeSource = ObservableBoolean(false)                                         //是否为换源下载
     val showSearchSuggest = ObservableBoolean(false)                                      //是否显示搜索建议
     val showHotWord = ObservableBoolean(false)                                            //是否显示搜索热词
     val searchHotWords = Array<ObservableField<String>>(10) { ObservableField("") }  //显示的搜索热词
-    val colors =
-        Array(10) { ObservableInt(R.color.hot_label_bg1) }                  //显示的搜索热词颜色
+    val colors = Array(10) { ObservableInt(R.color.hot_label_bg1) }        //显示的搜索热词颜色
     var hotWordsTemp: List<SearchHotWordsBean>? = null                          //搜索热词(从中选取)
 
     private var queryText = ""
@@ -101,25 +96,16 @@ class SearchViewModel(val context: Application) : AndroidViewModel(context),
         showHotWord.set(true)
     }
 
-    override fun onQueryTextChange(newText: String?) {
+    override fun onQueryTextChange(newText: String?): Cursor? {
         resultList.clear()
-        if (newText!!.isEmpty()) {
+        return if (newText!!.isEmpty()) {
             showHotWord.set(true)
             showSearchSuggest.set(false)
+            null
         } else {
             showHotWord.set(false)
             showSearchSuggest.set(true)
             searchBookSuggest(newText)
-        }
-    }
-
-    /**
-     * 在搜索框输入过程中匹配一些输入项并提示
-     */
-    override fun searchBookSuggest(queryText: String) {
-        ApiManager.mAPI.searchSuggest(queryText, "com.ushaqi.zhuishushenqi").enqueueCall {
-            suggestList.clear()
-            it?.keywords?.toHashSet()?.toList()?.apply { suggestList.addAll(this) }
         }
     }
 
@@ -182,6 +168,22 @@ class SearchViewModel(val context: Application) : AndroidViewModel(context),
         null
     }
 
+    /**
+     * 在搜索框输入过程中匹配一些输入项并提示
+     */
+    private fun searchBookSuggest(queryText: String): Cursor? {
+        return try{
+            val suggestCursor = MatrixCursor(arrayOf("text","_id"))
+            ApiManager.mAPI.searchSuggest(queryText, "com.ushaqi.zhuishushenqi")
+                    .execute().body()?.keywords?.filter { it.tag == "bookname" }
+                    ?.map { it.text }?.toHashSet()
+                    ?.forEachIndexed { index, s -> suggestCursor.addRow(arrayOf(s, index)) }
+            suggestCursor
+        }catch (e: IOException){
+            null
+        }
+    }
+
     //从具体网站搜索，并添加到resultList
     @Throws(IOException::class)
     private fun searchBookFromSite(
@@ -241,7 +243,6 @@ class SearchViewModel(val context: Application) : AndroidViewModel(context),
     }
 
     //下载书籍图片，搜索时调用(搜索时顺便获取图片链接)
-    @Throws(IOException::class)
     private fun downloadImage(bookname: String, imageUrl: String) {
         val path = "${getSavePath()}/tmp".apply { File(this).mkdirs() } + "/$bookname.png"
         if (imageUrl != "" && !File(path).exists()) {

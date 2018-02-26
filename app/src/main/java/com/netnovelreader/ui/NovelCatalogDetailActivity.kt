@@ -3,18 +3,20 @@ package com.netnovelreader.ui
 import android.app.AlertDialog
 import android.databinding.DataBindingUtil
 import android.databinding.ObservableArrayList
+import android.databinding.ObservableBoolean
+import android.databinding.ObservableField
 import android.os.Bundle
 import android.support.v7.app.AppCompatActivity
-import android.support.v7.widget.DefaultItemAnimator
-import android.support.v7.widget.LinearLayoutManager
 import android.support.v7.widget.RecyclerView
-import android.view.*
-import android.widget.TextView
+import android.view.Gravity
+import android.view.Menu
+import android.view.MenuItem
 import com.netnovelreader.R
 import com.netnovelreader.bean.FilterBean
 import com.netnovelreader.common.CatalogPagerAdapter
 import com.netnovelreader.common.PreferenceManager
 import com.netnovelreader.common.RecyclerAdapter
+import com.netnovelreader.common.init
 import com.netnovelreader.databinding.ActivityCatalogDetailBinding
 import com.netnovelreader.interfaces.IClickEvent
 import kotlinx.android.synthetic.main.activity_catalog_detail.*
@@ -28,16 +30,14 @@ import kotlinx.android.synthetic.main.activity_catalog_detail.*
 class NovelCatalogDetailActivity : AppCompatActivity() {
     private var dialog: AlertDialog? = null               //筛选小说用的Dialog
     private var filterList = ObservableArrayList<FilterBean>()
-    private var filterAdapter: RecyclerAdapter<FilterBean>? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         PreferenceManager.getThemeId(this).also { setTheme(it) }
         super.onCreate(savedInstanceState)
 
-
         DataBindingUtil.setContentView<ActivityCatalogDetailBinding>(
-            this,
-            R.layout.activity_catalog_detail
+                this,
+                R.layout.activity_catalog_detail
         )
         setSupportActionBar({ toolbar.title = intent.getStringExtra("major");toolbar }())
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
@@ -48,8 +48,8 @@ class NovelCatalogDetailActivity : AppCompatActivity() {
         viewPager.offscreenPageLimit =
                 4                  //一次性初始化typeList-1+1页，所以初始化时间比较久，但是随后的切换不会卡顿因为都已经初始化完毕了
         viewPager.adapter = CatalogPagerAdapter(
-            supportFragmentManager,
-            intent.getStringExtra("major")
+                supportFragmentManager,
+                intent.getStringExtra("major")
         )
         tabLayout.setupWithViewPager(viewPager)
 
@@ -74,36 +74,26 @@ class NovelCatalogDetailActivity : AppCompatActivity() {
 
     private fun showDialog() {
         if (dialog == null) {
-            filterList.add(FilterBean("同人小说", true))
-            filterList.add(FilterBean("同人影视", false))
-            filterList.add(FilterBean("同人电视剧", false))
-            filterList.add(FilterBean("同人？？？", false))
+            filterList.add(FilterBean(ObservableField("同人小说"), ObservableBoolean(true)))
+            filterList.add(FilterBean(ObservableField("同人影视"), ObservableBoolean(false)))
+            filterList.add(FilterBean(ObservableField("同人电视剧"), ObservableBoolean(false)))
+            filterList.add(FilterBean(ObservableField("同人？？？"), ObservableBoolean(false)))
             val builder = AlertDialog.Builder(this)
-            val view = LayoutInflater.from(this).inflate(R.layout.dialog_catalog, null)
-            val filterView = view.findViewById<RecyclerView>(R.id.catalogView)
-            filterView.layoutManager = LinearLayoutManager(this)
-            filterView.itemAnimator = DefaultItemAnimator()
-            filterAdapter =
-                    RecyclerAdapter(
-                        filterList,
-                        R.layout.item_filter,
-                        FilterNovelItemClickListener()
-                    )
-            filterView.adapter = filterAdapter
-            dialog = builder.setView(view).create()
+            val filterView = RecyclerView(this)
+            filterView.init(
+                    RecyclerAdapter(filterList, R.layout.item_filter, FilterNovelItemClickListener())
+            )
+            dialog = builder.setView(filterView).create()
             val dialogWindow = dialog!!.window
             dialogWindow.setGravity(Gravity.CENTER)
         }
         dialog?.show()
     }
 
-
     inner class FilterNovelItemClickListener : IClickEvent {
-        fun onItemClick(v: View) {
-            val filterName = v.findViewById<TextView>(R.id.filterName).text.toString()
-            filterList.firstOrNull { it.selected == true }?.selected = false
-            filterList.firstOrNull { it.minorType == filterName }?.selected = true
-            filterAdapter?.notifyDataSetChanged()
+        fun onItemClick(bean: FilterBean) {
+            filterList.firstOrNull { it.selected.get() == true }?.selected?.set(false)
+            bean.selected.set(true)
             dialog?.dismiss()
         }
     }

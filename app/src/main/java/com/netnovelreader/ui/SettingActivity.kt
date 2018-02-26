@@ -8,7 +8,7 @@ import kotlinx.android.synthetic.main.activity_setting.*
 
 class SettingActivity : AppCompatActivity() {
     var themeId: Int = 0
-    private var settingFragment: ShelfSettingFragment? = null
+    private var mFragment: ShelfSettingFragment? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -16,18 +16,15 @@ class SettingActivity : AppCompatActivity() {
         setTheme(themeId)
         setContentView(R.layout.activity_setting)
 
-
-        setSupportActionBar(settingToolbar.apply {
-            setTitle(R.string.settings)
-            setNavigationIcon(R.drawable.icon_back)
-        })
+        setSupportActionBar(settingToolbar)
         settingToolbar.setNavigationOnClickListener {
             this@SettingActivity.finish()
         }
 
-        settingFragment = ShelfSettingFragment()
-        fragmentManager.beginTransaction().replace(R.id.shelfFrameLayout, settingFragment)
-            .commit()
+        if(intent.getIntExtra("type", 0) == 0){
+            mFragment = ShelfSettingFragment()
+            fragmentManager.beginTransaction().replace(R.id.shelfFrameLayout, mFragment).commit()
+        }
     }
 
 }

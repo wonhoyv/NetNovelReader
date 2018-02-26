@@ -5,4 +5,4 @@ import android.databinding.BaseObservable
 /**
  * Created by yangbo on 18-1-13.
  */
-class ReaderBean(var catalogItem: String) : BaseObservable()
+data class ReaderBean(var catalogItem: String) : BaseObservable()
