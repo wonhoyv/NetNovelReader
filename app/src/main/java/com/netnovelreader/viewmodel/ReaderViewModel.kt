@@ -5,9 +5,11 @@ import android.arch.lifecycle.AndroidViewModel
 import android.databinding.ObservableArrayList
 import android.databinding.ObservableBoolean
 import android.databinding.ObservableField
+import com.netnovelreader.bean.ChapterChangeType
 import com.netnovelreader.bean.ReaderBean
 import com.netnovelreader.common.NotDeleteNum
 import com.netnovelreader.common.getSavePath
+import com.netnovelreader.common.replace
 import com.netnovelreader.data.db.ReaderDbManager
 import com.netnovelreader.data.db.ShelfBean
 import com.netnovelreader.data.network.ChapterCache
@@ -24,12 +26,6 @@ import java.io.IOException
 
 class ReaderViewModel(context: Application) : AndroidViewModel(context),
         IReaderContract.IReaderViewModel {
-
-    enum class CHAPTERCHANGE {
-        NEXT,                       //下一章
-        PREVIOUS,                   //上一章
-        BY_CATALOG                  //通过目录翻页
-    }
 
     val catalog by lazy { ObservableArrayList<ReaderBean>() }
     /**
@@ -53,6 +49,7 @@ class ReaderViewModel(context: Application) : AndroidViewModel(context),
 
     private lateinit var bookName: String
     private var CACHE_NUM: Int = 0
+
     /**
      * readerView第一次绘制时执行, 返还阅读记录页数
      */
@@ -67,11 +64,11 @@ class ReaderViewModel(context: Application) : AndroidViewModel(context),
     }
 
     //获取章节内容
-    override suspend fun getChapter(type: CHAPTERCHANGE, chapterName: String?) {
+    override suspend fun getChapter(type: ChapterChangeType, chapterName: String?) {
         when (type) {
-            CHAPTERCHANGE.NEXT -> if (chapterNum >= maxChapterNum) return else chapterNum++
-            CHAPTERCHANGE.PREVIOUS -> if (chapterNum < 2) return else chapterNum--
-            CHAPTERCHANGE.BY_CATALOG -> chapterName?.run {
+            ChapterChangeType.NEXT -> if (chapterNum >= maxChapterNum) return else chapterNum++
+            ChapterChangeType.PREVIOUS -> if (chapterNum < 2) return else chapterNum--
+            ChapterChangeType.BY_CATALOG -> chapterName?.run {
                 chapterNum = ReaderDbManager.getChapterId(bookName, chapterName)
             }
         }
@@ -98,7 +95,7 @@ class ReaderViewModel(context: Application) : AndroidViewModel(context),
         }
         if (str != ChapterCache.FILENOTFOUND && str.isNotEmpty()) {
             isLoading.set(false)
-            getChapter(ReaderViewModel.CHAPTERCHANGE.BY_CATALOG, null)
+            getChapter(ChapterChangeType.BY_CATALOG, null)
         }
     }
 
@@ -107,7 +104,7 @@ class ReaderViewModel(context: Application) : AndroidViewModel(context),
         updateCatalog()
         getCatalog()
         chapterCache!!.clearCache()
-        getChapter(CHAPTERCHANGE.BY_CATALOG, null)
+        getChapter(ChapterChangeType.BY_CATALOG, null)
     }
 
     /**

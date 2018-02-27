@@ -19,21 +19,4 @@ interface ShelfDao {
 
     @Delete
     fun delete(bean: ShelfBean)
-
-    fun replace(bean: ShelfBean){
-        val old = getBookInfo(bean.bookName!!)
-        if(old == null){
-            insert(bean)
-        }else{
-            ShelfBean(
-                    bean._id ?: old._id,
-                    bean.bookName,
-                    bean.downloadUrl ?: old.downloadUrl,
-                    bean.readRecord ?: old.readRecord,
-                    bean.isUpdate ?: old.isUpdate,
-                    bean.latestChapter ?: old.latestChapter,
-                    bean.latestRead ?: old.latestRead
-            ).apply { insert(this) }
-        }
-    }
 }

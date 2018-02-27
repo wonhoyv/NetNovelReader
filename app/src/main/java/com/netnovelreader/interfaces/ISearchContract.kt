@@ -20,5 +20,8 @@ interface ISearchContract {
             chapterName: String?,
             which: Int
         ): String?
+
+        fun activityExit()
+        fun selectHotWord(word: String)
     }
 }

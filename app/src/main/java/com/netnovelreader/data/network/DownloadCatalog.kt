@@ -1,6 +1,7 @@
 package com.netnovelreader.data.network
 
 import com.netnovelreader.common.UPDATEFLAG
+import com.netnovelreader.common.replace
 import com.netnovelreader.common.url2Hostname
 import com.netnovelreader.data.db.ReaderDbManager
 import com.netnovelreader.data.db.ShelfBean
@@ -33,9 +34,13 @@ class DownloadCatalog(val tableName: String, val catalogUrl: String) {
             ReaderDbManager.getDB().endTransaction()
             ReaderDbManager.doTransaction = false
         }
-
-        ReaderDbManager.getRoomDB().shelfDao().replace(ShelfBean(bookName = tableName,isUpdate = UPDATEFLAG,
+        latestChapter ?: return
+        if (latestChapter.equals(ReaderDbManager.getRoomDB().shelfDao().getBookInfo(tableName)?.latestChapter)) {
+            ReaderDbManager.getRoomDB().shelfDao().replace(
+                ShelfBean(
+                    bookName = tableName, isUpdate = UPDATEFLAG,
                 latestChapter = latestChapter))
+        }
     }
 
     /**

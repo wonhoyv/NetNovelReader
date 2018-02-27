@@ -1,6 +1,7 @@
 package com.netnovelreader.ui
 
 import android.app.AlertDialog
+import android.arch.lifecycle.Observer
 import android.arch.lifecycle.ViewModelProvider
 import android.arch.lifecycle.ViewModelProviders
 import android.content.Context
@@ -45,7 +46,7 @@ class SearchActivity : AppCompatActivity(), ISearchContract.ISearchView {
         super.onCreate(savedInstanceState)
         initViewModel()
         initView()
-
+        observeLiveData()
         val isChangeSource = !intent.getStringExtra("bookname").isNullOrEmpty()
         searchViewModel?.isChangeSource?.set(isChangeSource)
         if (isChangeSource) {
@@ -58,25 +59,30 @@ class SearchActivity : AppCompatActivity(), ISearchContract.ISearchView {
     override fun initViewModel() {
         val factory = ViewModelProvider.AndroidViewModelFactory.getInstance(application)
         searchViewModel = ViewModelProviders.of(this, factory).get(SearchViewModel::class.java)
-        val binding =
-                DataBindingUtil.setContentView<ActivitySearchBinding>(this, R.layout.activity_search)
-        binding.clickEvent = ActivityClickEvent()
-        binding.viewModel = searchViewModel
+        DataBindingUtil.setContentView<ActivitySearchBinding>(this, R.layout.activity_search)
+            .apply { viewModel = searchViewModel }
     }
 
     override fun initView() {
         searchRecycler.init(
-                RecyclerAdapter(
-                        searchViewModel?.resultList,
-                        R.layout.item_search,
-                        SearchItemClickEvent()
-                )
+            RecyclerAdapter(
+                searchViewModel?.resultList,
+                R.layout.item_search,
+                SearchItemClickEvent()
+            )
         )
 
         searchViewBar.setOnQueryTextListener(QueryListener())
         searchViewBar.onActionViewExpanded()
         searchViewBar.suggestionsAdapter = SearchViewAdapter(this, null)
         searchViewBar.setOnSuggestionListener(SuggestionListener())
+    }
+
+    fun observeLiveData() {
+        searchViewModel?.toastMessage?.observe(this, Observer { it?.let { toast(it) } })
+        searchViewModel?.exitSignal?.observe(this, Observer { finish() })
+        searchViewModel?.selectedHotWord?.observe(
+            this, Observer { searchViewBar.setQuery(it, false) })
     }
 
     @Suppress("UNCHECKED_CAST")
@@ -110,7 +116,6 @@ class SearchActivity : AppCompatActivity(), ISearchContract.ISearchView {
 
         override fun onQueryTextChange(newText: String?): Boolean {
             launch(UI) {
-                if (searchViewBar.visibility != View.VISIBLE) return@launch
                 deffered?.cancel()
                 deffered = async { searchViewModel?.onQueryTextChange(newText) }
                 suggestCursor = deffered?.await()
@@ -120,8 +125,10 @@ class SearchActivity : AppCompatActivity(), ISearchContract.ISearchView {
         }
     }
 
-    class SearchViewAdapter(context: Context, cursor: Cursor?) : CursorAdapter(context, cursor,
-            true) {
+    class SearchViewAdapter(context: Context, cursor: Cursor?) : CursorAdapter(
+        context, cursor,
+        true
+    ) {
         override fun newView(context: Context, cursor: Cursor?, parent: ViewGroup?): View {
             return LayoutInflater.from(context).inflate(R.layout.item_search_suggest, parent, false)
         }
@@ -135,6 +142,7 @@ class SearchActivity : AppCompatActivity(), ISearchContract.ISearchView {
         override fun onSuggestionClick(position: Int): Boolean {
             if (suggestCursor?.moveToPosition(position) == true) {
                 searchViewBar.setQuery(suggestCursor?.getString(0), true)
+                job?.cancel()
                 job = launch { searchViewModel?.searchBook(suggestCursor?.getString(0), null) }
             }
             return true
@@ -145,28 +153,13 @@ class SearchActivity : AppCompatActivity(), ISearchContract.ISearchView {
         }
     }
 
-    //backbutton点击事件
-    inner class ActivityClickEvent : IClickEvent {
-        fun onBackClick() {
-            finish()
-        }
-
-        //将搜索热词填充到searchView上但是不触发网络请求
-        fun submitHotWord(word: String) {
-            searchViewBar.setQuery(word, false)
-        }
-    }
-
-
     //搜索列表item点击事件
     inner class SearchItemClickEvent : IClickEvent {
 
         fun onClickDetail(itemText: String) {
             launch(UI) {
                 val novelIntroduce = async { searchViewModel?.detailClick(itemText) }.await()
-                if (novelIntroduce == null) {
-                    toast("没有搜索到相关小说的介绍")
-                } else {
+                if (novelIntroduce != null) {
                     val intent = Intent(this@SearchActivity, NovelDetailActivity::class.java)
                     intent.putExtra("data", novelIntroduce)
                     this@SearchActivity.startActivity(intent)
@@ -180,12 +173,11 @@ class SearchActivity : AppCompatActivity(), ISearchContract.ISearchView {
                 launch(UI) {
                     val str = async {
                         searchViewModel!!.downloadBook(
-                                itemDetail.bookname.get() ?: "",
-                                itemDetail.url.get() ?: "",
-                                intent.getStringExtra("chapterName"), which
+                            itemDetail.bookname.get() ?: "",
+                            itemDetail.url.get() ?: "",
+                            intent.getStringExtra("chapterName"), which
                         )
                     }.await()
-                    toast(getString(R.string.catalog_finish))
                     if (!str.isNullOrEmpty()) {
                         val intent = Intent(this@SearchActivity, DownloadService::class.java)
                         intent.putExtra("tableName", str)
@@ -196,10 +188,10 @@ class SearchActivity : AppCompatActivity(), ISearchContract.ISearchView {
                 }
             }
             AlertDialog.Builder(this@SearchActivity).setTitle(getString(R.string.downloadAllBook))
-                    .setPositiveButton(R.string.yes, listener)
-                    .setNegativeButton(getString(R.string.no), listener)
-                    .setNeutralButton(getString(R.string.cancel), null)
-                    .create().show()
+                .setPositiveButton(R.string.yes, listener)
+                .setNegativeButton(getString(R.string.no), listener)
+                .setNeutralButton(getString(R.string.cancel), null)
+                .create().show()
         }
     }
 }

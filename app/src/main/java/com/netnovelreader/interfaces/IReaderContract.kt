@@ -1,6 +1,6 @@
 package com.netnovelreader.interfaces
 
-import com.netnovelreader.viewmodel.ReaderViewModel
+import com.netnovelreader.bean.ChapterChangeType
 
 /**
  * Created by yangbo on 18-1-13.
@@ -13,7 +13,7 @@ interface IReaderContract {
     interface IReaderViewModel : IViewModel {
         suspend fun initData(bookName: String, CACHE_NUM: Int): Int
         suspend fun getChapter(
-            type: ReaderViewModel.CHAPTERCHANGE,
+            type: ChapterChangeType,
             chapterName: String?
         )
         suspend fun downloadAndShow()

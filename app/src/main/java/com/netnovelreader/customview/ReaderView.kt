@@ -82,7 +82,7 @@ class ReaderView : View, GestureDetector.OnGestureListener {
         fun onCenterClick()
 
         //当翻页时调用，向前向后翻页，同一章内翻页，翻至其他章节都会调用
-        fun onPageChange()
+        fun onPageChange(index: Int)
     }
 
 
@@ -206,7 +206,7 @@ class ReaderView : View, GestureDetector.OnGestureListener {
         } else {
             pageNum = pageNum!! - 1
         }
-        pageListener?.onPageChange()
+        pageListener?.onPageChange(pageNum!!)
     }
 
     //向后翻页
@@ -217,7 +217,7 @@ class ReaderView : View, GestureDetector.OnGestureListener {
         } else {
             pageListener?.nextChapter()
         }
-        pageListener?.onPageChange()
+        pageListener?.onPageChange(pageNum!!)
     }
 
     //章节改变时调用，分割内容

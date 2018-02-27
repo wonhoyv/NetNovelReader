@@ -19,6 +19,7 @@ import android.view.WindowManager
 import android.widget.SeekBar
 import android.widget.TextView
 import com.netnovelreader.R
+import com.netnovelreader.bean.ChapterChangeType
 import com.netnovelreader.common.*
 import com.netnovelreader.customview.ReaderView
 import com.netnovelreader.databinding.ActivityReaderBinding
@@ -118,7 +119,7 @@ class ReaderActivity : AppCompatActivity(), IReaderContract.IReaderView,
                     PreferenceManager.getAutoDownNum(this@ReaderActivity)
                 )
             }.await()
-            readerViewModel?.getChapter(ReaderViewModel.CHAPTERCHANGE.BY_CATALOG, null)
+            readerViewModel?.getChapter(ChapterChangeType.BY_CATALOG, null)
         }
     }
 
@@ -132,21 +133,21 @@ class ReaderActivity : AppCompatActivity(), IReaderContract.IReaderView,
     override fun nextChapter() {
         hideHeadFoot()
         launch {
-            readerViewModel?.getChapter(ReaderViewModel.CHAPTERCHANGE.NEXT, null)
+            readerViewModel?.getChapter(ChapterChangeType.NEXT, null)
         }
     }
 
     override fun previousChapter() {
         hideHeadFoot()
         launch {
-            readerViewModel?.getChapter(ReaderViewModel.CHAPTERCHANGE.PREVIOUS, null)
+            readerViewModel?.getChapter(ChapterChangeType.PREVIOUS, null)
         }
     }
 
-    override fun onPageChange() {
+    override fun onPageChange(index: Int) {
         hideHeadFoot()
         launch {
-            readerViewModel?.setRecord(readerView.pageNum ?: 1)
+            readerViewModel?.setRecord(index)
         }
     }
 
@@ -196,7 +197,7 @@ class ReaderActivity : AppCompatActivity(), IReaderContract.IReaderView,
     inner class CatalogItemClickListener : IClickEvent {
         fun onChapterClick(chapterName: String?) {
             launch {
-                readerViewModel?.getChapter(ReaderViewModel.CHAPTERCHANGE.BY_CATALOG, chapterName)
+                readerViewModel?.getChapter(ChapterChangeType.BY_CATALOG, chapterName)
                 readerViewModel?.setRecord(readerView.pageNum ?: 1)
             }
             dialog?.dismiss()

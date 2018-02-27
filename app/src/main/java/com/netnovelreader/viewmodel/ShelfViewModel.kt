@@ -2,7 +2,6 @@ package com.netnovelreader.viewmodel
 
 import android.app.Application
 import android.arch.lifecycle.AndroidViewModel
-import android.arch.lifecycle.MutableLiveData
 import android.databinding.ObservableArrayList
 import android.databinding.ObservableField
 import android.graphics.Bitmap
@@ -14,6 +13,7 @@ import com.netnovelreader.ReaderApplication.Companion.threadPool
 import com.netnovelreader.bean.BookBean
 import com.netnovelreader.common.IMAGENAME
 import com.netnovelreader.common.getSavePath
+import com.netnovelreader.common.replace
 import com.netnovelreader.data.db.ReaderDbManager
 import com.netnovelreader.data.db.ShelfBean
 import com.netnovelreader.data.network.DownloadCatalog
@@ -29,11 +29,7 @@ import java.util.*
 class ShelfViewModel(val context: Application) : AndroidViewModel(context),
     IShelfContract.IShelfViewModel {
 
-    val bookList by lazy {
-        MutableLiveData<ObservableArrayList<BookBean>>().run {
-            value = ObservableArrayList(); value!!
-        }
-    }
+    val bookList = ObservableArrayList<BookBean>()
 
     //检查书籍是否有更新
     @Synchronized
