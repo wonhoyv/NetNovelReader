@@ -21,20 +21,16 @@ import android.widget.TextView
 import com.netnovelreader.R
 import com.netnovelreader.bean.ChapterChangeType
 import com.netnovelreader.common.*
-import com.netnovelreader.customview.ReaderView
 import com.netnovelreader.databinding.ActivityReaderBinding
-import com.netnovelreader.interfaces.IClickEvent
 import com.netnovelreader.interfaces.IReaderContract
 import com.netnovelreader.viewmodel.ReaderViewModel
 import de.hdodenhof.circleimageview.CircleImageView
 import kotlinx.android.synthetic.main.activity_reader.*
-import kotlinx.coroutines.experimental.async
 import kotlinx.coroutines.experimental.launch
 import kotlinx.coroutines.experimental.runBlocking
 
 
-class ReaderActivity : AppCompatActivity(), IReaderContract.IReaderView,
-    ReaderView.ReaderPageListener, ReaderView.FirstDrawListener, IClickEvent {
+class ReaderActivity : AppCompatActivity(), IReaderContract.IReaderView {
     val FONTSIZE = "FontSize"
     var readerViewModel: ReaderViewModel? = null
     var dialog: AlertDialog? = null
@@ -51,25 +47,28 @@ class ReaderActivity : AppCompatActivity(), IReaderContract.IReaderView,
         super.onCreate(savedInstanceState)
         initViewModel()
         initView()
+        initLiveData()
     }
 
     override fun initViewModel() {
         val factory = ViewModelProvider.AndroidViewModelFactory.getInstance(application)
-        readerViewModel = ViewModelProviders.of(this, factory).get(ReaderViewModel::class.java)
-        val binding =
-            DataBindingUtil.setContentView<ActivityReaderBinding>(this, R.layout.activity_reader)
-        binding.clickEvent = ReaderClickEvent()
-        binding.readerViewModel = readerViewModel
-        binding.readerView.firstDrawListener = this
-        binding.readerView.pageListener = this
-        binding.readerView.txtFontSize = getSharedPreferences(PREFERENCE_NAME, Context.MODE_PRIVATE)
-            .getFloat(FONTSIZE, 50f)
+        readerViewModel = ViewModelProviders.of(this, factory).get(ReaderViewModel::class.java).apply {
+            bookName = intent.getStringExtra("bookname")
+            CACHE_NUM = PreferenceManager.getAutoDownNum(this@ReaderActivity)
+        }
+        DataBindingUtil.setContentView<ActivityReaderBinding>(this, R.layout.activity_reader).apply {
+            clickEvent = ReaderClickEvent()
+            viewModel = readerViewModel
+        }
     }
 
     override fun initView() {
         netStateReceiver = NetChangeReceiver()
         val filter = IntentFilter().apply { addAction(ConnectivityManager.CONNECTIVITY_ACTION) }
         registerReceiver(netStateReceiver, filter)  //网络变化广播接收器
+
+        readerView.txtFontSize = getSharedPreferences(PREFERENCE_NAME, Context.MODE_PRIVATE)
+                .getFloat(FONTSIZE, 50f)
 
         sb_brightness.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
             override fun onProgressChanged(seekBar: SeekBar, progress: Int, fromUser: Boolean) {
@@ -87,6 +86,9 @@ class ReaderActivity : AppCompatActivity(), IReaderContract.IReaderView,
         })
     }
 
+    override fun initLiveData() {
+    }
+
     override fun onResume() {
         super.onResume()
         launch { readerViewModel?.reloadCurrentChapter() }
@@ -102,52 +104,12 @@ class ReaderActivity : AppCompatActivity(), IReaderContract.IReaderView,
 
     override fun onBackPressed() {
         if (footView.visibility == View.VISIBLE) {
-            hideHeadFoot()
+            headerView.visibility = View.INVISIBLE
+            footView.visibility = View.INVISIBLE
+            fontSetting.visibility = View.INVISIBLE
+            backgroundSetting.visibility = View.INVISIBLE
         } else {
             super.onBackPressed()
-        }
-    }
-
-    /**
-     * readerview第一次绘制时调用
-     */
-    override fun doDrawPrepare() {
-        launch {
-            readerView.pageNum = async {
-                readerViewModel?.initData(
-                    intent.getStringExtra("bookname"),
-                    PreferenceManager.getAutoDownNum(this@ReaderActivity)
-                )
-            }.await()
-            readerViewModel?.getChapter(ChapterChangeType.BY_CATALOG, null)
-        }
-    }
-
-    //点击屏幕中间
-    override fun onCenterClick() {
-        if (hideHeadFoot()) return
-        footView.visibility = View.VISIBLE
-        headerView.visibility = View.VISIBLE
-    }
-
-    override fun nextChapter() {
-        hideHeadFoot()
-        launch {
-            readerViewModel?.getChapter(ChapterChangeType.NEXT, null)
-        }
-    }
-
-    override fun previousChapter() {
-        hideHeadFoot()
-        launch {
-            readerViewModel?.getChapter(ChapterChangeType.PREVIOUS, null)
-        }
-    }
-
-    override fun onPageChange(index: Int) {
-        hideHeadFoot()
-        launch {
-            readerViewModel?.setRecord(index)
         }
     }
 
@@ -167,19 +129,10 @@ class ReaderActivity : AppCompatActivity(), IReaderContract.IReaderView,
             dialog = builder.setView(catalogView).create()
         }
         launch { readerViewModel?.getCatalog() }.join()
-        catalogView?.scrollToPosition(readerViewModel!!.chapterNum - 1)
+        catalogView?.scrollToPosition(readerViewModel!!.chapterNum.get() - 1)
         dialog?.show()
         dialog?.window?.setLayout(readerView.width * 5 / 6, readerView.height * 9 / 10)
         Unit
-    }
-
-    private fun hideHeadFoot(): Boolean {
-        return (footView.visibility == View.VISIBLE).apply {
-            headerView.visibility = View.INVISIBLE
-            footView.visibility = View.INVISIBLE
-            fontSetting.visibility = View.INVISIBLE
-            backgroundSetting.visibility = View.INVISIBLE
-        }
     }
 
     //网络变化广播接收器
@@ -194,7 +147,7 @@ class ReaderActivity : AppCompatActivity(), IReaderContract.IReaderView,
     }
 
     //点击目录，跳转章节
-    inner class CatalogItemClickListener : IClickEvent {
+    inner class CatalogItemClickListener {
         fun onChapterClick(chapterName: String?) {
             launch {
                 readerViewModel?.getChapter(ChapterChangeType.BY_CATALOG, chapterName)
@@ -204,7 +157,7 @@ class ReaderActivity : AppCompatActivity(), IReaderContract.IReaderView,
         }
     }
 
-    inner class ReaderClickEvent : IClickEvent {
+    inner class ReaderClickEvent {
 
         private var selectedBgImageView: CircleImageView? = null       //用于记录用户当前选中的背景样式的UI控件
         private var selectedFontTypeTextView: TextView? = null             //用于记录用户当前选中的字体样式的UI控件

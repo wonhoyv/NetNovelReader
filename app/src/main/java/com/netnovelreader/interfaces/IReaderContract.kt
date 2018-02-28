@@ -11,7 +11,6 @@ interface IReaderContract {
     }
 
     interface IReaderViewModel : IViewModel {
-        suspend fun initData(bookName: String, CACHE_NUM: Int): Int
         suspend fun getChapter(
             type: ChapterChangeType,
             chapterName: String?

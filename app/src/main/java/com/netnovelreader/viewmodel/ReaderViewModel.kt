@@ -15,66 +15,51 @@ import com.netnovelreader.data.db.ShelfBean
 import com.netnovelreader.data.network.ChapterCache
 import com.netnovelreader.data.network.DownloadCatalog
 import com.netnovelreader.interfaces.IReaderContract
+import kotlinx.coroutines.experimental.async
 import kotlinx.coroutines.experimental.delay
 import kotlinx.coroutines.experimental.launch
+import kotlinx.coroutines.experimental.runBlocking
 import java.io.File
 import java.io.IOException
+import java.util.concurrent.atomic.AtomicInteger
 
 /**
  * Created by yangbo on 18-1-13.
  */
 
-class ReaderViewModel(context: Application) : AndroidViewModel(context),
+class ReaderViewModel(val context: Application) : AndroidViewModel(context),
         IReaderContract.IReaderViewModel {
 
-    val catalog by lazy { ObservableArrayList<ReaderBean>() }
-    /**
-     * 一页显示的内容
-     */
-    var text: ObservableField<String> = ObservableField("")
-
+    val catalog by lazy { ObservableArrayList<ReaderBean>() }      //目录
+    val text: ObservableField<String> = ObservableField("")  //一页显示的内容
+    val isHeadViewShow = ObservableBoolean(false)
+    val isFontSettingShow = ObservableBoolean(false)
+    val isBackgroundSetingShow = ObservableBoolean(false)
+    val isFootViewShow = ObservableBoolean(false)
     var isLoading = ObservableBoolean(true)
-
     @Volatile
     var chapterName: String? = null
-    /**
-     * 章节数,最大章节数
-     */
     @Volatile
-    var chapterNum = 1
+    var chapterNum = AtomicInteger(1)              //章节数
     @Volatile
-    var maxChapterNum = 0
-
+    var maxChapterNum = 0                                    //最大章节数
     var chapterCache: ChapterCache? = null
 
-    private lateinit var bookName: String
-    private var CACHE_NUM: Int = 0
-
-    /**
-     * readerView第一次绘制时执行, 返还阅读记录页数
-     */
-    override suspend fun initData(bookName: String, CACHE_NUM: Int): Int {
-        this.bookName = bookName
-        this.CACHE_NUM = CACHE_NUM
-        maxChapterNum = ReaderDbManager.getChapterCount(bookName).takeIf { it != 0 } ?: return 0
-        val record = getRecord()
-        chapterNum = record[0]
-        chapterCache = ChapterCache(CACHE_NUM, bookName).apply { init(maxChapterNum, bookName) }
-        return record[1]
-    }
+    lateinit var bookName: String
+    var CACHE_NUM: Int = 0
 
     //获取章节内容
     override suspend fun getChapter(type: ChapterChangeType, chapterName: String?) {
         when (type) {
-            ChapterChangeType.NEXT -> if (chapterNum >= maxChapterNum) return else chapterNum++
-            ChapterChangeType.PREVIOUS -> if (chapterNum < 2) return else chapterNum--
+            ChapterChangeType.NEXT -> if (chapterNum.get() >= maxChapterNum) return else chapterNum.incrementAndGet()
+            ChapterChangeType.PREVIOUS -> if (chapterNum.get() < 2) return else chapterNum.decrementAndGet()
             ChapterChangeType.BY_CATALOG -> chapterName?.run {
-                chapterNum = ReaderDbManager.getChapterId(bookName, chapterName)
+                ReaderDbManager.getChapterId(bookName, chapterName).also { chapterNum.set(it) }
             }
         }
         isLoading.set(true)
-        launch { if (chapterNum == maxChapterNum) updateCatalog() }
-        val str = chapterCache!!.getChapter(chapterNum, false)
+        launch { if (chapterNum.get() == maxChapterNum) updateCatalog() }
+        val str = chapterCache!!.getChapter(chapterNum.get(), false)
         text.set(str)
         this.chapterName = str.substring(0, str.indexOf("|"))
         if (str.substring(str.indexOf("|") + 1) == ChapterCache.FILENOTFOUND) {
@@ -90,7 +75,7 @@ class ReaderViewModel(context: Application) : AndroidViewModel(context),
         var str = ChapterCache.FILENOTFOUND
         var times = 0
         while (str == ChapterCache.FILENOTFOUND && times++ < 10) {
-            str = chapterCache!!.getChapter(chapterNum)
+            str = chapterCache!!.getChapter(chapterNum.get())
             delay(500)
         }
         if (str != ChapterCache.FILENOTFOUND && str.isNotEmpty()) {
@@ -112,7 +97,7 @@ class ReaderViewModel(context: Application) : AndroidViewModel(context),
      */
     @Synchronized
     override suspend fun setRecord(pageNum: Int) {
-        if (chapterNum < 1) return
+        if (chapterNum.get() < 1) return
         ReaderDbManager.getRoomDB().shelfDao().replace(ShelfBean(bookName = bookName,
                  readRecord = "$chapterNum#${if (pageNum < 1) 1 else pageNum}"))
     }
@@ -136,6 +121,52 @@ class ReaderViewModel(context: Application) : AndroidViewModel(context),
         ReaderDbManager.setReaded(bookName, id)
                 .forEach { File("${getSavePath()}/$bookName/$it").delete() }
     }
+
+    fun doDrawPrepare(): Int = runBlocking{
+        maxChapterNum = ReaderDbManager.getChapterCount(bookName).takeIf { it != 0 } ?: return@runBlocking 0
+        val record = async { getRecord() }.await()
+        chapterNum.set(record[0])
+        chapterCache = ChapterCache(CACHE_NUM, bookName).apply { init(maxChapterNum, bookName) }
+        launch { getChapter(ChapterChangeType.BY_CATALOG, null) }
+        record[1]
+    }
+
+    fun nextChapter(){
+        isHeadViewShow.set(false)
+        isFontSettingShow.set(false)
+        isBackgroundSetingShow.set(false)
+        isFootViewShow.set(false)
+        launch { getChapter(ChapterChangeType.NEXT, null) }
+    }
+
+    fun previousChapter() {
+        isHeadViewShow.set(false)
+        isFontSettingShow.set(false)
+        isBackgroundSetingShow.set(false)
+        isFootViewShow.set(false)
+        launch { getChapter(ChapterChangeType.PREVIOUS, null) }
+    }
+
+    fun onPageChange(index: Int){
+        isHeadViewShow.set(false)
+        isFontSettingShow.set(false)
+        isBackgroundSetingShow.set(false)
+        isFootViewShow.set(false)
+        launch { setRecord(index) }
+    }
+
+    fun onCenterClick() {
+        if(isFootViewShow.get()){
+            isHeadViewShow.set(false)
+            isFontSettingShow.set(false)
+            isBackgroundSetingShow.set(false)
+            isFootViewShow.set(false)
+        }else{
+            isFootViewShow.set(true)
+            isHeadViewShow.set(true)
+        }
+    }
+
 
     /**
      * 获取阅读记录

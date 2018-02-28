@@ -1,10 +1,9 @@
 package com.netnovelreader.ui
 
 import android.app.AlertDialog
-import android.app.Dialog
+import android.arch.lifecycle.Observer
 import android.arch.lifecycle.ViewModelProvider
 import android.arch.lifecycle.ViewModelProviders
-import android.content.DialogInterface
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.databinding.DataBindingUtil
@@ -18,9 +17,7 @@ import com.netnovelreader.common.PreferenceManager
 import com.netnovelreader.common.RecyclerAdapter
 import com.netnovelreader.common.init
 import com.netnovelreader.common.toast
-import com.netnovelreader.data.db.ReaderDbManager
 import com.netnovelreader.databinding.ActivityShelfBinding
-import com.netnovelreader.interfaces.IClickEvent
 import com.netnovelreader.interfaces.IShelfContract
 import com.netnovelreader.viewmodel.ShelfViewModel
 import kotlinx.android.synthetic.main.activity_shelf.*
@@ -37,12 +34,13 @@ class ShelfActivity : AppCompatActivity(), IShelfContract.IShelfView {
     override fun onCreate(savedInstanceState: Bundle?) {
         themeId = PreferenceManager.getThemeId(this).also { setTheme(it) }
         super.onCreate(savedInstanceState)
-        initViewModel()
         hasPermission = checkPermission(android.Manifest.permission.WRITE_EXTERNAL_STORAGE)
         if (!hasPermission) {
             requirePermission(android.Manifest.permission.WRITE_EXTERNAL_STORAGE, 1)
         }
+        initViewModel()
         initView()
+        initLiveData()
     }
 
     /**
@@ -57,8 +55,8 @@ class ShelfActivity : AppCompatActivity(), IShelfContract.IShelfView {
     override fun initView() {
         setSupportActionBar(shelfToolbar)
         shelfRecycler.init(
-            RecyclerAdapter(shelfViewModel?.bookList, R.layout.item_shelf, ShelfClickEvent()),
-            null
+                RecyclerAdapter(shelfViewModel?.bookList, R.layout.item_shelf, shelfViewModel),
+                null
         )
         shelf_layout.setColorSchemeResources(R.color.gray)
         var time = System.currentTimeMillis()
@@ -69,6 +67,21 @@ class ShelfActivity : AppCompatActivity(), IShelfContract.IShelfView {
             time = System.currentTimeMillis()
             shelf_layout.isRefreshing = false
         }
+    }
+
+    override fun initLiveData() {
+        shelfViewModel?.readBookTask?.observe(this, Observer {
+            startActivity(Intent(this, ReaderActivity::class.java)
+                    .apply { this.putExtra("bookname", it) })
+        })
+        shelfViewModel?.showDialogTask?.observe(this, Observer {
+            AlertDialog.Builder(this@ShelfActivity)
+                    .setTitle(getString(R.string.deleteBook).replace("book", it!!))
+                    .setPositiveButton(R.string.yes, { _, _ -> launch { shelfViewModel?.deleteBook(it) } })
+                    .setNegativeButton(R.string.no, null)
+                    .create()
+                    .show()
+        })
     }
 
     override fun onStart() {
@@ -84,24 +97,14 @@ class ShelfActivity : AppCompatActivity(), IShelfContract.IShelfView {
 
     override fun onResume() {
         super.onResume()
-        updateShelf()
+        launch { if (hasPermission) shelfViewModel?.refreshBookList() }
     }
 
     @Suppress("UNCHECKED_CAST")
     override fun onDestroy() {
         super.onDestroy()
         job?.cancel()
-        (shelfRecycler.adapter as RecyclerAdapter<Any>).removeDataChangeListener()
-        ReaderDbManager.closeDB()
-    }
-
-    //刷新书架数据
-    override fun updateShelf() {
-        launch {
-            if (hasPermission) {
-                shelfViewModel?.refreshBookList()
-            }
-        }
+        (shelfRecycler.adapter as RecyclerAdapter<Any, Any>).removeDataChangeListener()
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
@@ -139,14 +142,14 @@ class ShelfActivity : AppCompatActivity(), IShelfContract.IShelfView {
      * 请求权限的结果
      */
     override fun onRequestPermissionsResult(
-        requestCode: Int,
-        permissions: Array<out String>,
-        grantResults: IntArray
+            requestCode: Int,
+            permissions: Array<out String>,
+            grantResults: IntArray
     ) {
         if (requestCode == 1) {
             if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                 hasPermission = true
-                updateShelf()
+                launch { shelfViewModel?.refreshBookList() }
             } else {
                 toast(getString(R.string.permission_warnning))
             }
@@ -156,47 +159,13 @@ class ShelfActivity : AppCompatActivity(), IShelfContract.IShelfView {
 
     override fun checkPermission(permission: String): Boolean {
         return ActivityCompat.checkSelfPermission(
-            this,
-            permission
+                this,
+                permission
         ) == PackageManager.PERMISSION_GRANTED
     }
 
     //请求权限
     override fun requirePermission(permission: String, reqCode: Int) {
         ActivityCompat.requestPermissions(this, Array(1) { permission }, reqCode)
-    }
-
-    /**
-     * recyclerView item点击事件
-     */
-    inner class ShelfClickEvent : IClickEvent {
-        fun itemOnClick(bookname: String) {
-            job?.cancel()
-            launch { shelfViewModel?.cancelUpdateFlag(bookname) }
-            this@ShelfActivity.startActivity(Intent(this@ShelfActivity, ReaderActivity::class.java)
-                .apply { this.putExtra("bookname", bookname) })
-        }
-
-        fun itemOnLongClick(bookname: String): Boolean {
-            val listener = DialogInterface.OnClickListener { _, which ->
-                if (which == Dialog.BUTTON_POSITIVE) {
-                    launch {
-                        shelfViewModel?.deleteBook(bookname)
-                    }
-                }
-            }
-            AlertDialog.Builder(this@ShelfActivity)
-                .setTitle(
-                    getString(R.string.deleteBook).replace(
-                        "book",
-                            bookname
-                    )
-                )
-                .setPositiveButton(R.string.yes, listener)
-                .setNegativeButton(R.string.no, listener)
-                .create()
-                .show()
-            return true
-        }
     }
 }

@@ -1,7 +1,7 @@
 package com.netnovelreader.interfaces
 
 import android.database.Cursor
-import com.netnovelreader.bean.NovelIntroduce
+import com.netnovelreader.bean.SearchBean
 import kotlinx.coroutines.experimental.Job
 
 /**
@@ -13,15 +13,10 @@ interface ISearchContract {
         fun onQueryTextChange(newText: String?): Cursor?
         fun refreshHotWords(): Job
         suspend fun searchBook(bookname: String?, chapterName: String?)
-        suspend fun detailClick(itemText: String): NovelIntroduce?
-        suspend fun downloadBook(
-            bookname: String,
-            catalogUrl: String,
-            chapterName: String?,
-            which: Int
-        ): String?
-
-        fun activityExit()
-        fun selectHotWord(word: String)
+        fun detailClickTask(itemText: String)
+        fun showDialogTask(itemDetail: SearchBean)
+        fun downloadBook(bookname: String, catalogUrl: String, chapterName: String?, which: Int): Job
+        fun activityExitTask()
+        fun selectHotWordTask(word: String)
     }
 }

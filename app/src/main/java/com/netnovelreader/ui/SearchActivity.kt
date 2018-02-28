@@ -18,14 +18,12 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
 import com.netnovelreader.R
-import com.netnovelreader.bean.SearchBean
 import com.netnovelreader.common.PreferenceManager
 import com.netnovelreader.common.RecyclerAdapter
 import com.netnovelreader.common.init
 import com.netnovelreader.common.toast
 import com.netnovelreader.data.network.CatalogCache
 import com.netnovelreader.databinding.ActivitySearchBinding
-import com.netnovelreader.interfaces.IClickEvent
 import com.netnovelreader.interfaces.ISearchContract
 import com.netnovelreader.service.DownloadService
 import com.netnovelreader.viewmodel.SearchViewModel
@@ -40,66 +38,87 @@ class SearchActivity : AppCompatActivity(), ISearchContract.ISearchView {
     var searchViewModel: SearchViewModel? = null
     private var job: Job? = null
     private var suggestCursor: Cursor? = null
+    private var chapterName: String? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         PreferenceManager.getThemeId(this).also { setTheme(it) }
         super.onCreate(savedInstanceState)
         initViewModel()
         initView()
-        observeLiveData()
-        val isChangeSource = !intent.getStringExtra("bookname").isNullOrEmpty()
-        searchViewModel?.isChangeSource?.set(isChangeSource)
-        if (isChangeSource) {
-            changeSource()
-        } else {
-            launch { searchViewModel?.refreshHotWords() }
-        }
+        initData()
+        initLiveData()
     }
 
     override fun initViewModel() {
         val factory = ViewModelProvider.AndroidViewModelFactory.getInstance(application)
         searchViewModel = ViewModelProviders.of(this, factory).get(SearchViewModel::class.java)
         DataBindingUtil.setContentView<ActivitySearchBinding>(this, R.layout.activity_search)
-            .apply { viewModel = searchViewModel }
+                .apply { viewModel = searchViewModel }
     }
 
     override fun initView() {
         searchRecycler.init(
-            RecyclerAdapter(
-                searchViewModel?.resultList,
-                R.layout.item_search,
-                SearchItemClickEvent()
-            )
+                RecyclerAdapter(searchViewModel?.resultList, R.layout.item_search, searchViewModel)
         )
-
         searchViewBar.setOnQueryTextListener(QueryListener())
         searchViewBar.onActionViewExpanded()
         searchViewBar.suggestionsAdapter = SearchViewAdapter(this, null)
         searchViewBar.setOnSuggestionListener(SuggestionListener())
     }
 
-    fun observeLiveData() {
+    fun initData(){
+        chapterName = intent.getStringExtra("chapterName")
+        searchViewModel?.isChangeSource?.set(!chapterName.isNullOrEmpty())
+        if (!chapterName.isNullOrEmpty()) {
+            searchViewModel?.isChangeSource?.set(true)
+            val bookname = intent.getStringExtra("bookname")
+            searchViewText.text = bookname
+            launch {
+                searchViewModel?.searchBook(bookname, intent.getStringExtra("chapterName"))
+            }
+        } else {
+            launch { searchViewModel?.refreshHotWords() }
+        }
+    }
+
+    override fun initLiveData() {
         searchViewModel?.toastMessage?.observe(this, Observer { it?.let { toast(it) } })
-        searchViewModel?.exitSignal?.observe(this, Observer { finish() })
-        searchViewModel?.selectedHotWord?.observe(
-            this, Observer { searchViewBar.setQuery(it, false) })
+        searchViewModel?.exitCommand?.observe(this, Observer { finish() })
+        searchViewModel?.selectHotWordCommand?.observe(
+                this, Observer { searchViewBar.setQuery(it, false) })
+        searchViewModel?.showBookDetailCommand?.observe(this, Observer {
+            it ?: return@Observer
+            val intent = Intent(this@SearchActivity, NovelDetailActivity::class.java)
+            intent.putExtra("data", it)
+            this@SearchActivity.startActivity(intent)
+        })
+        searchViewModel?.downLoadChapterCommand?.observe(this, Observer {
+            it ?: return@Observer
+            val intent = Intent(this@SearchActivity, DownloadService::class.java)
+            intent.putExtra("tableName", it[0])
+            intent.putExtra("catalogurl", it[1])
+            startService(intent)
+        })
+        searchViewModel?.showDialogCommand?.observe(this, Observer {
+            it ?: return@Observer
+            val listener = DialogInterface.OnClickListener { _, which ->
+                searchViewModel!!.downloadBook(it.bookname.get()!!, it.url.get()!!, chapterName, which)
+                finish()
+            }
+            AlertDialog.Builder(this@SearchActivity).setTitle(getString(R.string.downloadAllBook))
+                    .setPositiveButton(R.string.yes, listener)
+                    .setNegativeButton(getString(R.string.no), listener)
+                    .setNeutralButton(getString(R.string.cancel), null)
+                    .create().show()
+        })
     }
 
     @Suppress("UNCHECKED_CAST")
     override fun onDestroy() {
         super.onDestroy()
-        (searchRecycler.adapter as RecyclerAdapter<Any>).removeDataChangeListener()
+        (searchRecycler.adapter as RecyclerAdapter<Any, Any>).removeDataChangeListener()
         CatalogCache.clearCache()
         job?.cancel()
-    }
-
-    private fun changeSource() {
-        searchViewModel?.isChangeSource?.set(true)
-        val bookname = intent.getStringExtra("bookname")
-        searchViewText.text = bookname
-        launch {
-            searchViewModel?.searchBook(bookname, intent.getStringExtra("chapterName"))
-        }
     }
 
     inner class QueryListener : android.support.v7.widget.SearchView.OnQueryTextListener {
@@ -126,8 +145,8 @@ class SearchActivity : AppCompatActivity(), ISearchContract.ISearchView {
     }
 
     class SearchViewAdapter(context: Context, cursor: Cursor?) : CursorAdapter(
-        context, cursor,
-        true
+            context, cursor,
+            true
     ) {
         override fun newView(context: Context, cursor: Cursor?, parent: ViewGroup?): View {
             return LayoutInflater.from(context).inflate(R.layout.item_search_suggest, parent, false)
@@ -150,48 +169,6 @@ class SearchActivity : AppCompatActivity(), ISearchContract.ISearchView {
 
         override fun onSuggestionSelect(position: Int): Boolean {
             return true
-        }
-    }
-
-    //搜索列表item点击事件
-    inner class SearchItemClickEvent : IClickEvent {
-
-        fun onClickDetail(itemText: String) {
-            launch(UI) {
-                val novelIntroduce = async { searchViewModel?.detailClick(itemText) }.await()
-                if (novelIntroduce != null) {
-                    val intent = Intent(this@SearchActivity, NovelDetailActivity::class.java)
-                    intent.putExtra("data", novelIntroduce)
-                    this@SearchActivity.startActivity(intent)
-                }
-            }
-        }
-
-        //搜索列表item下载事件
-        fun onClickDownload(itemDetail: SearchBean) {
-            val listener = DialogInterface.OnClickListener { _, which ->
-                launch(UI) {
-                    val str = async {
-                        searchViewModel!!.downloadBook(
-                            itemDetail.bookname.get() ?: "",
-                            itemDetail.url.get() ?: "",
-                            intent.getStringExtra("chapterName"), which
-                        )
-                    }.await()
-                    if (!str.isNullOrEmpty()) {
-                        val intent = Intent(this@SearchActivity, DownloadService::class.java)
-                        intent.putExtra("tableName", str)
-                        intent.putExtra("catalogurl", itemDetail.url.get() ?: "")
-                        this@SearchActivity.startService(intent)
-                    }
-                    this@SearchActivity.finish()
-                }
-            }
-            AlertDialog.Builder(this@SearchActivity).setTitle(getString(R.string.downloadAllBook))
-                .setPositiveButton(R.string.yes, listener)
-                .setNegativeButton(getString(R.string.no), listener)
-                .setNeutralButton(getString(R.string.cancel), null)
-                .create().show()
         }
     }
 }

@@ -5,15 +5,15 @@ package com.netnovelreader.interfaces
  */
 interface IShelfContract {
     interface IShelfView : IView {
-        fun updateShelf()
         fun checkPermission(permission: String): Boolean
         fun requirePermission(permission: String, reqCode: Int)
     }
 
     interface IShelfViewModel : IViewModel {
+        fun readBookEvent(bookname: String)
+        fun deleteBookEvent(bookname: String): Boolean
         suspend fun updateBooks()
         suspend fun refreshBookList()
-        suspend fun cancelUpdateFlag(bookname: String)
         suspend fun deleteBook(bookname: String)
     }
 }

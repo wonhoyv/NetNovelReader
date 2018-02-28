@@ -19,27 +19,22 @@ class DownloadCatalog(val tableName: String, val catalogUrl: String) {
     fun download() {
         ReaderDbManager.createTable(tableName)
         val cacheMap = CatalogCache.cache.get(catalogUrl)?.catalogMap
-        var map = if (cacheMap != null && cacheMap.isNotEmpty()) cacheMap else getMapFromNet(catalogUrl)
-        map = filtExistsInSql(map)
+        val map = (if (cacheMap != null && cacheMap.isNotEmpty()) cacheMap else getMapFromNet(catalogUrl))
+                .let { filtExistsInSql(it) }
         var latestChapter: String? = null
-        try {
-            ReaderDbManager.doTransaction = true
-            ReaderDbManager.getDB().beginTransaction()
+        ReaderDbManager.getRoomDB().runInTransaction {
             map.forEach {
                 ReaderDbManager.setChapterFinish(tableName, it.key, it.value, 0)
                 latestChapter = it.key
             }
-            ReaderDbManager.getDB().setTransactionSuccessful()
-        } finally {
-            ReaderDbManager.getDB().endTransaction()
-            ReaderDbManager.doTransaction = false
         }
-        latestChapter ?: return
-        if (latestChapter.equals(ReaderDbManager.getRoomDB().shelfDao().getBookInfo(tableName)?.latestChapter)) {
-            ReaderDbManager.getRoomDB().shelfDao().replace(
-                ShelfBean(
-                    bookName = tableName, isUpdate = UPDATEFLAG,
-                latestChapter = latestChapter))
+        val dbLatestChapter = ReaderDbManager.getRoomDB().shelfDao().getBookInfo(tableName)?.latestChapter
+        if(latestChapter != null && dbLatestChapter != latestChapter){
+            latestChapter?.let {
+                ReaderDbManager.getRoomDB().shelfDao().replace(
+                        ShelfBean(bookName = tableName, isUpdate = UPDATEFLAG, latestChapter = it)
+                )
+            }
         }
     }
 
@@ -59,19 +54,8 @@ class DownloadCatalog(val tableName: String, val catalogUrl: String) {
     /**
      * 过滤目录的某些章节，从map中过滤掉filter
      */
-    fun filtCatalog(
-            map: LinkedHashMap<String, String>,
-            filters: List<String>
-    ): LinkedHashMap<String, String> {
-        val arr = ArrayList<String>()
-        map.forEach {
-            filters.forEach { filter ->
-                if (it.key.contains(filter)) {
-                    arr.add(it.key)
-                }
-            }
-        }
-        arr.forEach { map.remove(it) }
+    fun filtCatalog(map: LinkedHashMap<String, String>, filters: List<String>): LinkedHashMap<String, String> {
+        map.filter { entry -> filters.filter { entry.key.contains(it) }.size > 0 }.forEach{ map.remove(it.key) }
         return map
     }
 

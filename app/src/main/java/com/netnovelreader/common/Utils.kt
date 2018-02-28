@@ -85,8 +85,8 @@ inline fun <T> Call<T>.enqueueCall(crossinline block: (t: T?) -> Unit) {
     })
 }
 
-fun <T> RecyclerView.init(
-    adapter: RecyclerAdapter<T>,
+fun <T, E> RecyclerView.init(
+    adapter: RecyclerAdapter<in T, in E>,
     decor: RecyclerView.ItemDecoration? = NovelItemDecoration(this.context),
     layoutManager: RecyclerView.LayoutManager = LinearLayoutManager(this.context),
     animator: RecyclerView.ItemAnimator = DefaultItemAnimator()
